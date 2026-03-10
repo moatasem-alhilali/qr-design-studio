@@ -1,25 +1,41 @@
 import { QRConfig } from './qr-engine';
 
 export interface FrameConfig {
-  type: 'none' | 'simple' | 'rounded' | 'bold' | 'minimal' | 'social' | 'premium';
+  type: 'none' | 'simple' | 'rounded' | 'bold' | 'minimal' | 'social' | 'premium' | 'glass' | 'spotlight';
   textTop: string;
   textBottom: string;
+  badgeText: string;
   bgColor: string;
   borderColor: string;
   textColor: string;
+  accentColor: string;
+  badgeColor: string;
+  badgeTextColor: string;
+  qrBackgroundColor: string;
   padding: number;
   fontSize: number;
+  borderWidth: number;
+  cornerRadius: number;
+  shadow: number;
 }
 
 export const defaultFrameConfig: FrameConfig = {
   type: 'none',
   textTop: '',
   textBottom: 'Scan Me',
+  badgeText: '',
   bgColor: '#FFFFFF',
   borderColor: '#000000',
   textColor: '#000000',
+  accentColor: '#6C3AED',
+  badgeColor: '#6C3AED',
+  badgeTextColor: '#FFFFFF',
+  qrBackgroundColor: '#FFFFFF',
   padding: 20,
   fontSize: 16,
+  borderWidth: 2,
+  cornerRadius: 22,
+  shadow: 18,
 };
 
 export interface SavedQRCode {

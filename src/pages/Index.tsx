@@ -58,7 +58,7 @@ const Index = () => {
       getQRCode(eId).then((qr) => {
         if (qr) {
           setConfig(qr.config);
-          setFrameConfig(qr.frameConfig || defaultFrameConfig);
+          setFrameConfig({ ...defaultFrameConfig, ...(qr.frameConfig || {}) });
           setQrType(qr.type);
           setQrName(qr.name);
           setShortCode(qr.shortCode || null);
