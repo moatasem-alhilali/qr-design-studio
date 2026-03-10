@@ -55,7 +55,7 @@ export function AuthForm() {
           {resetMode ? 'Reset Password' : isSignUp ? 'Create Account' : 'Welcome Back'}
         </h2>
         <p className="text-sm text-muted-foreground">
-          {resetMode ? 'Enter your email to receive a reset link' : isSignUp ? 'Sign up to save and manage QR codes' : 'Sign in to your QR Studio account'}
+          {resetMode ? 'Enter your email to receive a reset link' : isSignUp ? 'Sign up to save and manage QR codes' : 'Sign in to your QR Design Studio account'}
         </p>
       </div>
 

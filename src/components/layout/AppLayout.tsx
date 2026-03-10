@@ -1,8 +1,8 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-import { QrCode, LayoutDashboard, Sparkles, BarChart3, Layers, Settings, LogOut, PlusCircle, LogIn } from 'lucide-react';
+import { QrCode, LayoutDashboard, Sparkles, BarChart3, Layers, Settings, LogOut, PlusCircle, LogIn, Github } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const navItems = [
@@ -14,9 +14,91 @@ const navItems = [
   { path: '/settings', label: 'Settings', icon: Settings },
 ];
 
+const siteUrl = 'https://qr-design-dun.vercel.app';
+const defaultImage = `${siteUrl}/screenshots/banner.png`;
+
+function setMetaTag(selector: string, content: string) {
+  const element = document.querySelector<HTMLMetaElement>(selector);
+  if (element) {
+    element.setAttribute('content', content);
+  }
+}
+
+function setCanonicalUrl(href: string) {
+  const element = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+  if (element) {
+    element.href = href;
+  }
+}
+
+function getPageMeta(pathname: string) {
+  if (pathname.startsWith('/templates')) {
+    return {
+      title: 'QR Templates | QR Design Studio',
+      description: 'Browse ready-made QR templates for business, events, payments, WiFi, social profiles, and more.',
+    };
+  }
+
+  if (pathname.startsWith('/batch')) {
+    return {
+      title: 'Batch QR Generator | QR Design Studio',
+      description: 'Generate multiple QR codes from pasted data or CSV files and download them as a ZIP archive.',
+    };
+  }
+
+  if (pathname.startsWith('/analytics')) {
+    return {
+      title: 'QR Analytics Dashboard | QR Design Studio',
+      description: 'Track dynamic QR scans with timeline, country, device, and recent activity analytics.',
+    };
+  }
+
+  if (pathname.startsWith('/dashboard')) {
+    return {
+      title: 'My QR Codes | QR Design Studio',
+      description: 'Manage saved QR codes, favorites, archives, and dynamic QR campaigns from one dashboard.',
+    };
+  }
+
+  if (pathname.startsWith('/auth')) {
+    return {
+      title: 'Sign In | QR Design Studio',
+      description: 'Access your QR Design Studio account to save, manage, and analyze QR codes.',
+    };
+  }
+
+  if (pathname.startsWith('/settings')) {
+    return {
+      title: 'Settings | QR Design Studio',
+      description: 'Review Firebase connection details and project settings for QR Design Studio.',
+    };
+  }
+
+  return {
+    title: 'QR Design Studio | Dynamic QR Code Generator, Templates, Analytics',
+    description: 'Create branded QR codes with frames, templates, PNG and SVG export, dynamic redirects, and analytics.',
+  };
+}
+
 export function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { user, signOut, isConfigured } = useAuth();
+
+  useEffect(() => {
+    const meta = getPageMeta(location.pathname);
+    const pageUrl = `${siteUrl}${location.pathname}`;
+
+    document.title = meta.title;
+    setMetaTag('meta[name="description"]', meta.description);
+    setMetaTag('meta[property="og:title"]', meta.title);
+    setMetaTag('meta[property="og:description"]', meta.description);
+    setMetaTag('meta[property="og:url"]', pageUrl);
+    setMetaTag('meta[property="og:image"]', defaultImage);
+    setMetaTag('meta[name="twitter:title"]', meta.title);
+    setMetaTag('meta[name="twitter:description"]', meta.description);
+    setMetaTag('meta[name="twitter:image"]', defaultImage);
+    setCanonicalUrl(pageUrl);
+  }, [location.pathname]);
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -27,7 +109,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
             <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
               <QrCode className="h-4 w-4 text-primary-foreground" />
             </div>
-            <span className="text-lg font-semibold tracking-tight text-foreground">QR Studio</span>
+            <span className="text-lg font-semibold tracking-tight text-foreground">QR Design Studio</span>
           </Link>
         </div>
         <nav className="flex-1 p-3 space-y-1">
@@ -76,7 +158,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
                 <QrCode className="h-4 w-4 text-primary-foreground" />
               </div>
-              <span className="text-lg font-semibold text-foreground">QR Studio</span>
+              <span className="text-base font-semibold text-foreground">QR Design Studio</span>
             </Link>
             <div className="flex items-center gap-1">
               {navItems.slice(0, 4).filter(n => !n.auth || user).map(item => (
@@ -100,6 +182,20 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
         <main className="flex-1">{children}</main>
+        <footer className="border-t border-border bg-card/40 px-4 py-4">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-center text-sm text-muted-foreground md:flex-row md:text-left">
+            <p>Built by Moatasem Alhilali</p>
+            <a
+              href="https://github.com/moatasem-alhilali"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <Github className="h-4 w-4" />
+              GitHub Profile
+            </a>
+          </div>
+        </footer>
       </div>
     </div>
   );

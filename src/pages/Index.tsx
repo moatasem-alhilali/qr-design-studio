@@ -143,37 +143,6 @@ const Index = () => {
     setSaving(false);
   };
 
-  const renderFramePreview = () => {
-    if (frameConfig.type === "none") return <QRPreview config={config} />;
-
-    const borderWidth = frameConfig.type === "bold" ? 4 : frameConfig.type === "premium" ? 3 : 2;
-    const borderRadius = frameConfig.type === "rounded" || frameConfig.type === "social" || frameConfig.type === "premium" ? 16 : frameConfig.type === "minimal" ? 8 : 0;
-
-    return (
-      <div
-        className="overflow-hidden"
-        style={{
-          backgroundColor: frameConfig.bgColor,
-          border: `${borderWidth}px solid ${frameConfig.borderColor}`,
-          borderRadius,
-          padding: frameConfig.padding,
-        }}
-      >
-        {frameConfig.textTop && (
-          <p className="text-center mb-2 font-semibold" style={{ color: frameConfig.textColor, fontSize: frameConfig.fontSize }}>
-            {frameConfig.textTop}
-          </p>
-        )}
-        <QRPreview config={config} />
-        {frameConfig.textBottom && (
-          <p className="text-center mt-2 font-semibold" style={{ color: frameConfig.textColor, fontSize: frameConfig.fontSize }}>
-            {frameConfig.textBottom}
-          </p>
-        )}
-      </div>
-    );
-  };
-
   return (
     <div className="container px-4 py-6">
       {/* Desktop layout */}
@@ -229,7 +198,7 @@ const Index = () => {
         {/* Center Preview */}
         <motion.div className="flex flex-col items-center justify-center py-4" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
           <AnimatedQR animation={animation} onAnimationChange={setAnimation}>
-            {renderFramePreview()}
+            <QRPreview config={config} frame={frameConfig} />
           </AnimatedQR>
 
           {/* Save Section */}
@@ -285,7 +254,7 @@ const Index = () => {
 
         <div className="flex justify-center">
           <AnimatedQR animation={animation} onAnimationChange={setAnimation}>
-            <QRPreview config={config} />
+            <QRPreview config={config} frame={frameConfig} />
           </AnimatedQR>
         </div>
 

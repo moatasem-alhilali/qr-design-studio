@@ -9,6 +9,8 @@
 </p>
 
 <p align="center">
+  <a href="https://qr-design-dun.vercel.app/">Live Demo</a> •
+  <a href="https://github.com/moatasem-alhilali">GitHub</a> •
   <a href="#preview-gallery">Preview</a> •
   <a href="#features">Features</a> •
   <a href="#setup">Setup</a> •
@@ -21,6 +23,10 @@
 QR Design Studio is a `Vite + React + TypeScript` application for building professional QR codes with live styling controls, export tools, templates, frames, batch generation, and optional Firebase-powered dashboard and analytics features.
 
 > Note: this repository is a `Vite` project, not a Next.js app.
+
+## Demo
+
+- Live Demo: https://qr-design-dun.vercel.app/
 
 ## Preview Gallery
 

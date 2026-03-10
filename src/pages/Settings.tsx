@@ -53,7 +53,7 @@ export default function Settings() {
         )}
 
         <div className="panel-section space-y-3">
-          <h2 className="font-semibold text-foreground">About QR Studio</h2>
+          <h2 className="font-semibold text-foreground">About QR Design Studio</h2>
           <p className="text-sm text-muted-foreground">
             A professional QR code designer and management platform. Generate beautiful, customizable QR codes with analytics, templates, and batch generation.
           </p>

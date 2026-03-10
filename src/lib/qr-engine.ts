@@ -23,7 +23,7 @@ export interface QRConfig {
 }
 
 export const defaultConfig: QRConfig = {
-  data: "https://lovable.dev",
+  data: "https://qr-design-dun.vercel.app/",
   dataType: "url",
   moduleStyle: "rounded",
   cornerStyle: "rounded",
@@ -41,7 +41,7 @@ export const defaultConfig: QRConfig = {
 
 function formatData(config: QRConfig): string {
   const { data, dataType } = config;
-  if (!data) return "https://lovable.dev";
+  if (!data) return "https://qr-design-dun.vercel.app/";
   switch (dataType) {
     case "wifi":
       return `WIFI:T:WPA;S:${data};P:password;;`;
