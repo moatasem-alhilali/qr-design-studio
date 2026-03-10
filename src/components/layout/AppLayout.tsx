@@ -70,7 +70,7 @@ function getPageMeta(pathname: string) {
   if (pathname.startsWith('/settings')) {
     return {
       title: 'Settings | QR Design Studio',
-      description: 'Review Firebase connection details and project settings for QR Design Studio.',
+      description: 'Manage account access and app preferences in QR Design Studio.',
     };
   }
 
@@ -143,9 +143,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 <LogIn className="h-4 w-4" /> Sign In
               </Button>
             </Link>
-          ) : (
-            <p className="text-[10px] text-muted-foreground px-3">Configure Firebase to enable accounts</p>
-          )}
+          ) : null}
         </div>
       </aside>
 

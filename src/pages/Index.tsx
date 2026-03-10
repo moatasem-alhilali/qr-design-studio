@@ -6,7 +6,6 @@ import { StyleControls } from "@/components/qr/StyleControls";
 import { PresetPanel } from "@/components/qr/PresetPanel";
 import { QRFrameEditor } from "@/components/qr/QRFrameEditor";
 import { ScanReliabilityPanel } from "@/components/qr/ScanReliabilityPanel";
-import { AnimatedQR, AnimationStyle } from "@/components/qr/AnimatedQR";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { QrCode, Palette, Sparkles, ShieldCheck, Save, Zap, Square } from "lucide-react";
@@ -30,7 +29,6 @@ function getErrorMessage(error: unknown, fallback: string) {
 const Index = () => {
   const [config, setConfig] = useState<QRConfig>(defaultConfig);
   const [frameConfig, setFrameConfig] = useState<FrameConfig>(defaultFrameConfig);
-  const [animation, setAnimation] = useState<AnimationStyle>("none");
   const [qrType, setQrType] = useState<"static" | "dynamic">("static");
   const [dynamicUrl, setDynamicUrl] = useState("");
   const [qrName, setQrName] = useState("");
@@ -197,9 +195,7 @@ const Index = () => {
 
         {/* Center Preview */}
         <motion.div className="flex flex-col items-center justify-center py-4" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-          <AnimatedQR animation={animation} onAnimationChange={setAnimation}>
-            <QRPreview config={config} frame={frameConfig} />
-          </AnimatedQR>
+          <QRPreview config={config} frame={frameConfig} />
 
           {/* Save Section */}
           {isConfigured && user && (
@@ -253,9 +249,7 @@ const Index = () => {
         </div>
 
         <div className="flex justify-center">
-          <AnimatedQR animation={animation} onAnimationChange={setAnimation}>
-            <QRPreview config={config} frame={frameConfig} />
-          </AnimatedQR>
+          <QRPreview config={config} frame={frameConfig} />
         </div>
 
         {isConfigured && user && (

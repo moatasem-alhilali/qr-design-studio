@@ -59,7 +59,7 @@ export default function Dashboard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <QrCode className="h-12 w-12 text-muted-foreground" />
-        <p className="text-muted-foreground">Configure Firebase to save and manage QR codes</p>
+        <p className="text-center text-muted-foreground">Saved QR codes are unavailable in this deployment.</p>
         <Link to="/"><Button>Create QR Code</Button></Link>
       </div>
     );

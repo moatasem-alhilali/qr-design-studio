@@ -319,8 +319,9 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
   }, [config]);
 
   useEffect(() => {
+    // Switching between plain and framed preview remounts the canvas element.
     render();
-  }, [render]);
+  }, [render, hasFrame, frame?.type]);
 
   const handleDownloadPNG = () => {
     if (!canvasRef.current) return;

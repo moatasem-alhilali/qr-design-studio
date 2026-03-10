@@ -14,27 +14,19 @@ export default function Settings() {
 
       <div className="space-y-6">
         <div className="panel-section space-y-3">
-          <h2 className="font-semibold text-foreground">Firebase Connection</h2>
+          <h2 className="font-semibold text-foreground">Cloud Features</h2>
           <div className="flex items-center gap-2">
             {configured ? (
-              <><CheckCircle className="h-4 w-4 text-success" /><span className="text-sm text-foreground">Firebase is connected</span></>
+              <><CheckCircle className="h-4 w-4 text-success" /><span className="text-sm text-foreground">Cloud sync is active</span></>
             ) : (
-              <><XCircle className="h-4 w-4 text-destructive" /><span className="text-sm text-foreground">Firebase is not configured</span></>
+              <><XCircle className="h-4 w-4 text-muted-foreground" /><span className="text-sm text-foreground">Cloud sync is unavailable in this deployment</span></>
             )}
           </div>
-          {!configured && (
-            <div className="text-xs text-muted-foreground space-y-2">
-              <p>To enable all features, add these environment variables to your project:</p>
-              <code className="block bg-muted p-3 rounded text-[11px] font-mono leading-relaxed">
-                VITE_FIREBASE_API_KEY=your-api-key<br />
-                VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com<br />
-                VITE_FIREBASE_PROJECT_ID=your-project-id<br />
-                VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com<br />
-                VITE_FIREBASE_MESSAGING_SENDER_ID=123456789<br />
-                VITE_FIREBASE_APP_ID=1:123:web:abc
-              </code>
-            </div>
-          )}
+          <p className="text-sm text-muted-foreground">
+            {configured
+              ? 'Your account, saved QR codes, and analytics are available.'
+              : 'Saved QR codes, account sync, and analytics are hidden until cloud services are enabled.'}
+          </p>
         </div>
 
         {user && (

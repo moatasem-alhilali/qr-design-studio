@@ -62,7 +62,7 @@ export default function AnalyticsPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <BarChart3 className="h-12 w-12 text-muted-foreground" />
-        <p className="text-muted-foreground">Configure Firebase to view analytics</p>
+        <p className="text-center text-muted-foreground">Analytics are unavailable in this deployment.</p>
       </div>
     );
   }
