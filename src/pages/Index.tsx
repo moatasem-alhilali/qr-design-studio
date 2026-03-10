@@ -14,7 +14,7 @@ import { motion } from "framer-motion";
 import { FrameConfig, defaultFrameConfig } from "@/lib/types";
 import { useAuth } from "@/contexts/AuthContext";
 import { saveQRCode, getQRCode, updateQRCode } from "@/lib/services/qr-service";
-import { createShortLink, getRedirectUrl } from "@/lib/services/dynamic-qr-service";
+import { createShortLink, getRedirectUrl, updateShortLink } from "@/lib/services/dynamic-qr-service";
 import { qrTemplates } from "@/lib/qr-templates";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +22,10 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
 
 const Index = () => {
   const [config, setConfig] = useState<QRConfig>(defaultConfig);
@@ -32,6 +36,7 @@ const Index = () => {
   const [qrName, setQrName] = useState("");
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [shortCode, setShortCode] = useState<string | null>(null);
   const { user, isConfigured } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -41,7 +46,7 @@ const Index = () => {
     if (templateId) {
       const tmpl = qrTemplates.find((t) => t.id === templateId);
       if (tmpl) {
-        setConfig((prev) => ({ ...prev, ...tmpl.config, dataType: tmpl.dataType as any, data: "" }));
+        setConfig((prev) => ({ ...prev, ...tmpl.config, dataType: tmpl.dataType, data: "" }));
         if (tmpl.suggestedFrame) {
           setFrameConfig((prev) => ({ ...prev, type: "simple", textBottom: tmpl.suggestedFrame }));
         }
@@ -56,6 +61,7 @@ const Index = () => {
           setFrameConfig(qr.frameConfig || defaultFrameConfig);
           setQrType(qr.type);
           setQrName(qr.name);
+          setShortCode(qr.shortCode || null);
           if (qr.destinationUrl) setDynamicUrl(qr.destinationUrl);
         }
       });
@@ -75,24 +81,52 @@ const Index = () => {
     if (!qrName.trim()) { toast.error("Enter a name for your QR code"); return; }
     setSaving(true);
     try {
-      let destUrl = dynamicUrl || config.data;
+      const destUrl = dynamicUrl || config.data;
 
       if (qrType === "dynamic") {
         if (editId) {
-          await updateQRCode(editId, { config, frameConfig, name: qrName, destinationUrl: destUrl });
+          if (shortCode) {
+            const redirectUrl = getRedirectUrl(shortCode);
+            await updateShortLink(shortCode, { destinationUrl: destUrl, isActive: true });
+            await updateQRCode(editId, {
+              type: "dynamic",
+              name: qrName,
+              config: { ...config, data: redirectUrl },
+              frameConfig,
+              shortCode,
+              destinationUrl: destUrl,
+            });
+          } else {
+            const nextShortCode = await createShortLink(destUrl, editId);
+            const redirectUrl = getRedirectUrl(nextShortCode);
+            await updateQRCode(editId, {
+              type: "dynamic",
+              name: qrName,
+              config: { ...config, data: redirectUrl },
+              frameConfig,
+              shortCode: nextShortCode,
+              destinationUrl: destUrl,
+            });
+            setShortCode(nextShortCode);
+          }
         } else {
-          const shortCode = await createShortLink(destUrl, "");
-          const redirectUrl = getRedirectUrl(shortCode);
+          const nextShortCode = await createShortLink(destUrl, "");
+          const redirectUrl = getRedirectUrl(nextShortCode);
           const dynamicConfig = { ...config, data: redirectUrl };
-          await saveQRCode({
+          const qrId = await saveQRCode({
             userId: user.uid, name: qrName, type: "dynamic",
-            config: dynamicConfig, frameConfig, shortCode, destinationUrl: destUrl,
+            config: dynamicConfig, frameConfig, shortCode: nextShortCode, destinationUrl: destUrl,
             isActive: true, totalScans: 0, favorite: false, archived: false,
           });
+          await updateShortLink(nextShortCode, { qrCodeId: qrId });
+          setShortCode(nextShortCode);
         }
       } else {
         if (editId) {
-          await updateQRCode(editId, { config, frameConfig, name: qrName });
+          if (shortCode) {
+            await updateShortLink(shortCode, { isActive: false });
+          }
+          await updateQRCode(editId, { type: "static", config, frameConfig, name: qrName });
         } else {
           await saveQRCode({
             userId: user.uid, name: qrName, type: "static",
@@ -103,8 +137,8 @@ const Index = () => {
       }
       toast.success(editId ? "QR code updated!" : "QR code saved!");
       if (!editId) navigate("/dashboard");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save");
+    } catch (error) {
+      toast.error(getErrorMessage(error, "Failed to save"));
     }
     setSaving(false);
   };

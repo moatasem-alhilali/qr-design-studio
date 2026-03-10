@@ -7,6 +7,10 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Mail, Lock, Chrome } from 'lucide-react';
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error ? error.message : fallback;
+}
+
 export function AuthForm() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [resetMode, setResetMode] = useState(false);
@@ -29,8 +33,8 @@ export function AuthForm() {
         await signInWithEmailAndPassword(auth, email, password);
         toast.success('Signed in successfully');
       }
-    } catch (err: any) {
-      toast.error(err.message || 'Authentication failed');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Authentication failed'));
     }
     setLoading(false);
   };
@@ -39,8 +43,8 @@ export function AuthForm() {
     try {
       await signInWithPopup(auth, googleProvider);
       toast.success('Signed in with Google');
-    } catch (err: any) {
-      toast.error(err.message || 'Google sign-in failed');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'Google sign-in failed'));
     }
   };
 

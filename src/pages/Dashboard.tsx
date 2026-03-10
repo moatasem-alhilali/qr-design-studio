@@ -25,7 +25,7 @@ export default function Dashboard() {
   }, [user]);
 
   const filtered = (filter: string) => {
-    let items = qrCodes.filter(q =>
+    const items = qrCodes.filter(q =>
       q.name?.toLowerCase().includes(search.toLowerCase()) ||
       q.config?.data?.toLowerCase().includes(search.toLowerCase())
     );

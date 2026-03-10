@@ -81,7 +81,7 @@ export interface QRTemplate {
   description: string;
   category: string;
   icon: string;
-  dataType: string;
+  dataType: QRConfig['dataType'];
   placeholder: string;
   suggestedFrame: string;
   config: Partial<QRConfig>;

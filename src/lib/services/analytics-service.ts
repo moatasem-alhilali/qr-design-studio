@@ -1,17 +1,30 @@
 import { db } from '@/lib/firebase';
-import { collection, doc, setDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, setDoc, getDocs, query, where, orderBy, limit, updateDoc, increment } from 'firebase/firestore';
 import { QRScan } from '@/lib/types';
 
 const SCANS_COLLECTION = 'qr_scans';
+const QR_COLLECTION = 'qr_codes';
 
 export async function logScan(qrCodeId: string, scanData: Partial<QRScan>): Promise<void> {
   const ref = doc(collection(db, SCANS_COLLECTION));
+  const timestamp = new Date().toISOString();
   await setDoc(ref, {
     id: ref.id,
     qrCodeId,
-    timestamp: new Date().toISOString(),
+    timestamp,
     ...scanData,
   });
+
+  if (!qrCodeId) return;
+
+  try {
+    await updateDoc(doc(db, QR_COLLECTION, qrCodeId), {
+      totalScans: increment(1),
+      updatedAt: timestamp,
+    });
+  } catch {
+    // Keep scan logging best-effort even if the parent QR record is missing.
+  }
 }
 
 export async function getScansForQR(qrCodeId: string): Promise<QRScan[]> {

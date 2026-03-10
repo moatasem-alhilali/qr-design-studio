@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { resolveShortLink } from '@/lib/services/dynamic-qr-service';
+import { resolveShortLink, type ResolvedShortLink } from '@/lib/services/dynamic-qr-service';
 import { logScan, detectDeviceInfo, getLocationInfo } from '@/lib/services/analytics-service';
 import { isFirebaseConfigured } from '@/lib/firebase';
 import { QrCode, Loader2, AlertCircle } from 'lucide-react';
@@ -11,7 +11,7 @@ export default function Redirect() {
   const { code } = useParams<{ code: string }>();
   const [status, setStatus] = useState<'loading' | 'password' | 'error' | 'expired' | 'disabled'>('loading');
   const [password, setPassword] = useState('');
-  const [linkData, setLinkData] = useState<any>(null);
+  const [linkData, setLinkData] = useState<ResolvedShortLink | null>(null);
 
   useEffect(() => {
     if (!code || !isFirebaseConfigured()) {
