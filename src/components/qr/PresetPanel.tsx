@@ -38,22 +38,42 @@ export function PresetPanel({ config, onChange, onPartialChange }: PresetPanelPr
               key={preset.name}
               onClick={() => onChange(applyPreset(config, preset))}
               className={cn(
-                "group flex items-center gap-3 rounded-lg border p-3 text-left transition-all hover:bg-muted",
+                "group rounded-xl border p-3 text-left transition-all hover:border-primary/25 hover:bg-muted/50",
                 "border-border bg-card"
               )}
             >
-              <div
-                className="h-8 w-8 rounded-md shrink-0"
-                style={{
-                  background:
-                    preset.config.colorMode === "gradient"
-                      ? `linear-gradient(135deg, ${preset.config.color1}, ${preset.config.color2})`
-                      : preset.config.color1,
-                }}
-              />
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{preset.name}</p>
-                <p className="text-xs text-muted-foreground truncate">{preset.description}</p>
+              <div className="flex items-center gap-3">
+                <div
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border"
+                  style={{
+                    backgroundColor: preset.config.bgColor ?? "#FFFFFF",
+                    borderColor: `${preset.config.color1}33`,
+                  }}
+                >
+                  <div
+                    className="h-5 w-5 rounded"
+                    style={{
+                      background:
+                        preset.config.colorMode === "gradient"
+                          ? `linear-gradient(135deg, ${preset.config.color1}, ${preset.config.color2})`
+                          : preset.config.color1,
+                    }}
+                  />
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">{preset.name}</p>
+                  <p className="truncate text-xs text-muted-foreground">{preset.description}</p>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: preset.config.color1 }} />
+                {preset.config.colorMode === "gradient" && preset.config.color2 && (
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: preset.config.color2 }} />
+                )}
+                <span className="ml-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                  {preset.config.moduleStyle}
+                </span>
               </div>
             </button>
           ))}

@@ -37,23 +37,33 @@ export default function Templates() {
                 <button
                   key={tmpl.id}
                   onClick={() => applyTemplate(tmpl)}
-                  className="panel-section text-left hover:border-primary transition-all group p-4"
+                  className="group rounded-2xl border border-border bg-card p-4 text-left transition-all hover:border-primary/25 hover:bg-muted/40"
                 >
                   <div className="flex items-start gap-3">
                     <div
-                      className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0"
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border"
                       style={{
-                        background: tmpl.config.colorMode === 'gradient'
-                          ? `linear-gradient(135deg, ${tmpl.config.color1}, ${tmpl.config.color2})`
-                          : tmpl.config.color1,
+                        backgroundColor: `${tmpl.config.color1}12`,
+                        borderColor: `${tmpl.config.color1}2A`,
                       }}
                     >
-                      <Icon className="h-5 w-5 text-white" />
+                      <Icon className="h-5 w-5" style={{ color: tmpl.config.color1 }} />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">{tmpl.name}</h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">{tmpl.description}</p>
-                      <p className="text-[10px] text-muted-foreground mt-1">Suggested frame: "{tmpl.suggestedFrame}"</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="text-sm font-semibold text-foreground transition-colors group-hover:text-primary">{tmpl.name}</h3>
+                        <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                          {tmpl.category}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">{tmpl.description}</p>
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tmpl.config.color1 }} />
+                        <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
+                          {tmpl.config.moduleStyle}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-[10px] text-muted-foreground">Suggested frame: "{tmpl.suggestedFrame}"</p>
                     </div>
                   </div>
                 </button>
