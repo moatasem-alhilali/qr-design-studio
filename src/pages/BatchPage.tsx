@@ -1,5 +1,4 @@
-import { useState, useRef } from 'react';
-import { QRConfig, defaultConfig, generateQRMatrix, renderQRToCanvas } from '@/lib/qr-engine';
+import { useState, useRef, type ChangeEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -7,90 +6,52 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Upload, Plus, Trash2, Download, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import JSZip from 'jszip';
-import { BatchItem } from '@/lib/types';
+import { useBatchRows } from '@/features/batch/hooks/useBatchRows';
+import {
+  downloadBlob,
+  generateBatchZip,
+  parseCsvRows,
+  parsePastedRows,
+} from '@/features/batch/services/batch-rows';
 
 export default function BatchPage() {
-  const [rows, setRows] = useState<BatchItem[]>([]);
+  const { rows, validRows, addRow, addRows, updateRow, removeRow, clearRows } = useBatchRows();
   const [generating, setGenerating] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const addRow = () => setRows(prev => [...prev, { id: crypto.randomUUID(), data: '', label: '', status: 'pending' }]);
-
-  const updateRow = (id: string, updates: Partial<BatchItem>) => {
-    setRows(prev => prev.map(r => r.id === id ? { ...r, ...updates } : r));
-  };
-
-  const removeRow = (id: string) => setRows(prev => prev.filter(r => r.id !== id));
-
-  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCSVUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = reader.result as string;
-      const lines = text.split('\n').filter(l => l.trim());
-      const newRows: BatchItem[] = lines.slice(1).map(line => {
-        const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
-        return { id: crypto.randomUUID(), data: parts[0] || '', label: parts[1] || parts[0] || '', status: 'pending' as const };
-      });
-      setRows(prev => [...prev, ...newRows]);
+    try {
+      const newRows = parseCsvRows(await file.text());
+      addRows(newRows);
       toast.success(`Imported ${newRows.length} rows`);
-    };
-    reader.readAsText(file);
+    } catch {
+      toast.error('Could not import file');
+    }
     e.target.value = '';
   };
 
   const handlePasteMultiple = (text: string) => {
-    const lines = text.split('\n').filter(l => l.trim());
-    if (lines.length > 1) {
-      const newRows: BatchItem[] = lines.map(line => ({
-        id: crypto.randomUUID(), data: line.trim(), label: line.trim().slice(0, 30), status: 'pending' as const,
-      }));
-      setRows(prev => [...prev, ...newRows]);
-      return true;
-    }
-    return false;
+    const newRows = parsePastedRows(text);
+    if (newRows.length <= 1) return false;
+    addRows(newRows);
+    return true;
   };
 
   const generateAll = async () => {
     if (rows.length === 0) { toast.error('Add some data first'); return; }
     setGenerating(true);
-    const zip = new JSZip();
-    const canvas = document.createElement('canvas');
-
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row.data.trim()) {
-        updateRow(row.id, { status: 'error', error: 'Empty data' });
-        continue;
-      }
-      try {
-        const config: QRConfig = { ...defaultConfig, data: row.data };
-        const matrix = generateQRMatrix(config);
-        renderQRToCanvas(canvas, matrix, config);
-        const blob = await new Promise<Blob>((resolve) => {
-          canvas.toBlob(b => resolve(b!), 'image/png');
-        });
-        const filename = `${row.label || `qr-${i + 1}`}.png`.replace(/[^a-zA-Z0-9._-]/g, '_');
-        zip.file(filename, blob);
-        updateRow(row.id, { status: 'completed' });
-      } catch {
-        updateRow(row.id, { status: 'error', error: 'Generation failed' });
-      }
+    try {
+      const zipBlob = await generateBatchZip(rows, updateRow);
+      downloadBlob(zipBlob, 'qr-codes-batch.zip');
+      toast.success('Batch generated and downloaded!');
+    } catch {
+      toast.error('Batch generation failed');
+    } finally {
+      setGenerating(false);
     }
-
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(zipBlob);
-    link.download = 'qr-codes-batch.zip';
-    link.click();
-    URL.revokeObjectURL(link.href);
-    setGenerating(false);
-    toast.success('Batch generated and downloaded!');
   };
-
-  const validRows = rows.filter(r => r.data.trim());
 
   return (
     <div className="container px-4 py-6 max-w-4xl">
@@ -154,7 +115,7 @@ export default function BatchPage() {
             {generating ? 'Generating...' : `Generate ${validRows.length} QR Codes`}
           </Button>
           {rows.length > 0 && (
-            <Button variant="outline" onClick={() => setRows([])}>Clear All</Button>
+            <Button variant="outline" onClick={clearRows}>Clear All</Button>
           )}
         </div>
       </div>

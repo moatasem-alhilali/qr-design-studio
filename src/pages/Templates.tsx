@@ -1,24 +1,14 @@
-import { qrTemplates } from '@/lib/qr-templates';
-import { useNavigate } from 'react-router-dom';
+import { useApplyTemplate } from '@/features/templates/hooks/useApplyTemplate';
 import {
-  Globe, Wifi, Mail, Phone, MessageSquare, User, Star, Coffee,
-  Calendar, Download, CreditCard, MapPin, Type,
-} from 'lucide-react';
+  getTemplateCategories,
+  getTemplateIcon,
+  getTemplatesByCategory,
+} from '@/features/templates/services/template-catalog';
 
-const iconMap: Record<string, React.ElementType> = {
-  Globe, Wifi, Mail, Phone, MessageSquare, User, Star, Coffee,
-  Calendar, Download, CreditCard, MapPin, Type,
-};
-
-const categories = [...new Set(qrTemplates.map(t => t.category))];
+const categories = getTemplateCategories();
 
 export default function Templates() {
-  const navigate = useNavigate();
-
-  const applyTemplate = (template: typeof qrTemplates[0]) => {
-    const params = new URLSearchParams({ template: template.id });
-    navigate(`/?${params.toString()}`);
-  };
+  const applyTemplate = useApplyTemplate();
 
   return (
     <div className="container px-4 py-6 max-w-5xl">
@@ -31,8 +21,8 @@ export default function Templates() {
         <div key={cat} className="mb-8">
           <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">{cat}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {qrTemplates.filter(t => t.category === cat).map(tmpl => {
-              const Icon = iconMap[tmpl.icon] || Globe;
+            {getTemplatesByCategory(cat).map(tmpl => {
+              const Icon = getTemplateIcon(tmpl.icon);
               return (
                 <button
                   key={tmpl.id}

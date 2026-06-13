@@ -1,5 +1,3 @@
-import { useState, useCallback, useEffect } from "react";
-import { QRConfig, defaultConfig } from "@/lib/qr-engine";
 import { QRPreview } from "@/components/qr/QRPreview";
 import { DataInput } from "@/components/qr/DataInput";
 import { StyleControls } from "@/components/qr/StyleControls";
@@ -15,47 +13,23 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { QrCode, Palette, Sparkles, ShieldCheck, Square, Barcode } from "lucide-react";
 import { motion } from "framer-motion";
-import { FrameConfig, defaultFrameConfig } from "@/lib/types";
-import { qrTemplates } from "@/lib/qr-templates";
 import { Label } from "@/components/ui/label";
-import { BarcodeConfig, defaultBarcodeConfig } from "@/lib/barcode-engine";
 import { cn } from "@/lib/utils";
+import { useDesignerState, type DesignType } from "@/features/designer/hooks/useDesignerState";
 
 const Index = () => {
-  const [designType, setDesignType] = useState<"qr" | "barcode">("qr");
-  const [config, setConfig] = useState<QRConfig>(defaultConfig);
-  const [barcodeConfig, setBarcodeConfig] = useState<BarcodeConfig>(defaultBarcodeConfig);
-  const [frameConfig, setFrameConfig] = useState<FrameConfig>(defaultFrameConfig);
-
-  useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const templateId = searchParams.get("template");
-    if (templateId) {
-      const tmpl = qrTemplates.find((t) => t.id === templateId);
-      if (tmpl) {
-        setConfig((prev) => ({ ...prev, ...tmpl.config, dataType: tmpl.dataType, data: "" }));
-        if (tmpl.suggestedFrame) {
-          setFrameConfig((prev) => ({ ...prev, type: "simple", textBottom: tmpl.suggestedFrame }));
-        }
-      }
-    }
-  }, []);
-
-  const handleChange = useCallback((updates: Partial<QRConfig>) => {
-    setConfig((prev) => ({ ...prev, ...updates }));
-  }, []);
-
-  const handleFullChange = useCallback((newConfig: QRConfig) => {
-    setConfig(newConfig);
-  }, []);
-
-  const handleBarcodeChange = useCallback((updates: Partial<BarcodeConfig>) => {
-    setBarcodeConfig((prev) => ({ ...prev, ...updates }));
-  }, []);
-
-  const handleFullBarcodeChange = useCallback((newConfig: BarcodeConfig) => {
-    setBarcodeConfig(newConfig);
-  }, []);
+  const {
+    designType,
+    config,
+    barcodeConfig,
+    frameConfig,
+    setDesignType,
+    setFrameConfig,
+    handleChange,
+    handleFullChange,
+    handleBarcodeChange,
+    handleFullBarcodeChange,
+  } = useDesignerState();
 
   return (
     <div className="container px-4 py-6">
@@ -74,7 +48,7 @@ const Index = () => {
                   ].map(({ value, label, icon: Icon }) => (
                     <button
                       key={value}
-                      onClick={() => setDesignType(value as "qr" | "barcode")}
+                      onClick={() => setDesignType(value as DesignType)}
                       className={cn(
                         "flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all",
                         designType === value
@@ -173,7 +147,7 @@ const Index = () => {
           ].map(({ value, label, icon: Icon }) => (
             <button
               key={value}
-              onClick={() => setDesignType(value as "qr" | "barcode")}
+              onClick={() => setDesignType(value as DesignType)}
               className={cn(
                 "flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all",
                 designType === value
