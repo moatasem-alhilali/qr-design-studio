@@ -7,6 +7,7 @@ import { FrameConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { downloadSVG, exportCanvasAsPDF, exportCanvasAsPNG } from "@/lib/qr-engine";
 import { exportFramedSvg, getFrameMetrics, getTypography, renderFramedCanvas, scaleFrameConfig, withAlpha } from "@/components/code/frame-utils";
+import { useI18n } from "@/shared/i18n/i18n";
 
 interface BarcodePreviewProps {
   config: BarcodeConfig;
@@ -14,6 +15,7 @@ interface BarcodePreviewProps {
 }
 
 export function BarcodePreview({ config, frame }: BarcodePreviewProps) {
+  const { t } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const modelRef = useRef<ReturnType<typeof generateBarcodeModel> | null>(null);
   const hasFrame = Boolean(frame && frame.type !== "none");
@@ -204,7 +206,7 @@ export function BarcodePreview({ config, frame }: BarcodePreviewProps) {
 
       <div className="text-center">
         <p className="font-mono text-xs text-muted-foreground">
-          {config.format} · {config.barWidth}px bars · {config.height}px height
+          {config.format} · {config.barWidth}px {t.barcodeControls.bars} · {config.height}px {t.barcodeControls.height}
         </p>
       </div>
     </div>

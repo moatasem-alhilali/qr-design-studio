@@ -3,30 +3,31 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { Square, Circle, Diamond, Hexagon, RectangleHorizontal, Heart, Star, Triangle, Grid2x2 } from "lucide-react";
+import { useI18n } from "@/shared/i18n/i18n";
 
-const moduleStyles: { value: ModuleStyle; label: string; icon: React.ElementType }[] = [
-  { value: "square", label: "Square", icon: Square },
-  { value: "rounded", label: "Rounded", icon: RectangleHorizontal },
-  { value: "dots", label: "Dots", icon: Circle },
-  { value: "diamond", label: "Diamond", icon: Diamond },
-  { value: "extra-rounded", label: "Pill", icon: Hexagon },
-  { value: "tiny-squares", label: "Pixel", icon: Grid2x2 },
-  { value: "heart", label: "Heart", icon: Heart },
-  { value: "star", label: "Star", icon: Star },
-  { value: "triangle", label: "Triangle", icon: Triangle },
-  { value: "bubble", label: "Bubble", icon: Circle },
+const moduleStyles: { value: ModuleStyle; icon: React.ElementType }[] = [
+  { value: "square", icon: Square },
+  { value: "rounded", icon: RectangleHorizontal },
+  { value: "dots", icon: Circle },
+  { value: "diamond", icon: Diamond },
+  { value: "extra-rounded", icon: Hexagon },
+  { value: "tiny-squares", icon: Grid2x2 },
+  { value: "heart", icon: Heart },
+  { value: "star", icon: Star },
+  { value: "triangle", icon: Triangle },
+  { value: "bubble", icon: Circle },
 ];
 
-const cornerStyles: { value: CornerStyle; label: string }[] = [
-  { value: "square", label: "Square" },
-  { value: "rounded", label: "Rounded" },
-  { value: "circle", label: "Circle" },
-  { value: "thick", label: "Thick" },
-  { value: "minimal", label: "Minimal" },
-  { value: "decorative", label: "Decorative" },
-  { value: "ring", label: "Ring" },
-  { value: "leaf", label: "Leaf" },
-  { value: "frame-dots", label: "Dotted" },
+const cornerStyles: { value: CornerStyle }[] = [
+  { value: "square" },
+  { value: "rounded" },
+  { value: "circle" },
+  { value: "thick" },
+  { value: "minimal" },
+  { value: "decorative" },
+  { value: "ring" },
+  { value: "leaf" },
+  { value: "frame-dots" },
 ];
 
 interface StyleControlsProps {
@@ -35,15 +36,17 @@ interface StyleControlsProps {
 }
 
 export function StyleControls({ config, onChange }: StyleControlsProps) {
+  const { t } = useI18n();
+
   return (
     <div className="space-y-6">
       {/* Module Style */}
       <div className="space-y-3">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Module Shape
+          {t.qrControls.moduleShape}
         </Label>
         <div className="grid grid-cols-5 gap-1.5">
-          {moduleStyles.map(({ value, label, icon: Icon }) => (
+          {moduleStyles.map(({ value, icon: Icon }) => (
             <button
               key={value}
               onClick={() => onChange({ moduleStyle: value })}
@@ -55,7 +58,7 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
               )}
             >
               <Icon className="h-4 w-4" />
-              {label}
+              {t.values.moduleStyles[value]}
             </button>
           ))}
         </div>
@@ -64,10 +67,10 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
       {/* Corner Style */}
       <div className="space-y-3">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Corner Style
+          {t.qrControls.cornerStyle}
         </Label>
         <div className="grid grid-cols-3 gap-1.5">
-          {cornerStyles.map(({ value, label }) => (
+          {cornerStyles.map(({ value }) => (
             <button
               key={value}
               onClick={() => onChange({ cornerStyle: value })}
@@ -78,7 +81,7 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
                   : "border-border bg-card text-muted-foreground hover:bg-muted"
               )}
             >
-              {label}
+              {t.values.cornerStyles[value]}
             </button>
           ))}
         </div>
@@ -87,7 +90,7 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
       {/* Colors */}
       <div className="space-y-3">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Color Mode
+          {t.qrControls.colorMode}
         </Label>
         <div className="flex gap-2">
           {(["single", "gradient"] as ColorMode[]).map((mode) => (
@@ -101,14 +104,14 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
                   : "border-border bg-card text-muted-foreground hover:bg-muted"
               )}
             >
-              {mode}
+              {t.values.colorModes[mode]}
             </button>
           ))}
         </div>
 
         <div className="flex gap-3 items-center">
           <div className="space-y-1 flex-1">
-            <label className="text-xs text-muted-foreground">Color 1</label>
+            <label className="text-xs text-muted-foreground">{t.qrControls.color1}</label>
             <div className="flex gap-2 items-center">
               <input
                 type="color"
@@ -121,7 +124,7 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
           </div>
           {config.colorMode === "gradient" && (
             <div className="space-y-1 flex-1">
-              <label className="text-xs text-muted-foreground">Color 2</label>
+              <label className="text-xs text-muted-foreground">{t.qrControls.color2}</label>
               <div className="flex gap-2 items-center">
                 <input
                   type="color"
@@ -136,7 +139,7 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Background</label>
+          <label className="text-xs text-muted-foreground">{t.qrControls.background}</label>
           <div className="flex gap-2 items-center">
             <input
               type="color"
@@ -154,7 +157,7 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
                   : "border-border text-muted-foreground hover:bg-muted"
               )}
             >
-              Transparent
+              {t.qrControls.transparent}
             </button>
           </div>
         </div>
@@ -162,7 +165,7 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
         {config.colorMode === "gradient" && (
           <div className="space-y-2">
             <label className="text-xs text-muted-foreground">
-              Gradient Angle: {config.gradientAngle}°
+              {t.qrControls.gradientAngle}: {config.gradientAngle}°
             </label>
             <Slider
               value={[config.gradientAngle]}
@@ -178,7 +181,7 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
       {/* Size */}
       <div className="space-y-2">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Size: {config.size}px
+          {t.qrControls.size}: {config.size}px
         </Label>
         <Slider
           value={[config.size]}
@@ -192,7 +195,7 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
       {/* Error Correction */}
       <div className="space-y-3">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Error Correction
+          {t.qrControls.errorCorrection}
         </Label>
         <div className="grid grid-cols-4 gap-1.5">
           {(["L", "M", "Q", "H"] as const).map((level) => (

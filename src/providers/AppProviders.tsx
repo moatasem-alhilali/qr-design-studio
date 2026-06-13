@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnalyticsConsentBanner } from "@/features/analytics";
+import { I18nProvider } from "@/shared/i18n/i18n";
 import { WebMcpTools } from "@/shared/agent-readiness/WebMcpTools";
 import { createAppQueryClient } from "./query-client";
 
@@ -13,13 +14,15 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WebMcpTools />
-        <Toaster />
-        <Sonner />
-        {children}
-        <AnalyticsConsentBanner />
-      </TooltipProvider>
+      <I18nProvider>
+        <TooltipProvider>
+          <WebMcpTools />
+          <Toaster />
+          <Sonner />
+          {children}
+          <AnalyticsConsentBanner />
+        </TooltipProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }

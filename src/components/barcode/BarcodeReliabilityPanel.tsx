@@ -2,6 +2,7 @@ import { BarcodeConfig } from "@/lib/barcode-engine";
 import { analyzeBarcodeReliability } from "@/lib/barcode-reliability";
 import { cn } from "@/lib/utils";
 import { ShieldCheck, AlertTriangle, AlertCircle, Info } from "lucide-react";
+import { translateReliabilityGrade, translateReliabilityText, useI18n } from "@/shared/i18n/i18n";
 
 interface BarcodeReliabilityPanelProps {
   config: BarcodeConfig;
@@ -21,6 +22,7 @@ const severityIcons = {
 };
 
 export function BarcodeReliabilityPanel({ config }: BarcodeReliabilityPanelProps) {
+  const { locale, t } = useI18n();
   const result = analyzeBarcodeReliability(config);
 
   return (
@@ -28,8 +30,8 @@ export function BarcodeReliabilityPanel({ config }: BarcodeReliabilityPanelProps
       <div className={cn("flex items-center gap-3 rounded-lg border p-3", gradeColors[result.grade])}>
         <ShieldCheck className="h-5 w-5 shrink-0" />
         <div>
-          <p className="font-semibold text-sm">{result.grade}</p>
-          <p className="text-xs opacity-80">Reliability score: {result.score}/100</p>
+          <p className="font-semibold text-sm">{translateReliabilityGrade(locale, result.grade)}</p>
+          <p className="text-xs opacity-80">{t.barcodeControls.reliabilityScore}: {result.score}/100</p>
         </div>
       </div>
 
@@ -50,8 +52,8 @@ export function BarcodeReliabilityPanel({ config }: BarcodeReliabilityPanelProps
                   )}
                 />
                 <div>
-                  <p className="font-medium text-foreground">{issue.message}</p>
-                  <p className="text-muted-foreground">{issue.suggestion}</p>
+                  <p className="font-medium text-foreground">{translateReliabilityText(locale, issue.message)}</p>
+                  <p className="text-muted-foreground">{translateReliabilityText(locale, issue.suggestion)}</p>
                 </div>
               </div>
             );
@@ -59,7 +61,7 @@ export function BarcodeReliabilityPanel({ config }: BarcodeReliabilityPanelProps
         </div>
       ) : (
         <p className="text-xs text-muted-foreground text-center py-2">
-          No issues found. This barcode should print and scan reliably.
+          {t.barcodeControls.noIssues}
         </p>
       )}
     </div>

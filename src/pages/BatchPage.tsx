@@ -13,8 +13,10 @@ import {
   parseCsvRows,
   parsePastedRows,
 } from '@/features/batch/services/batch-rows';
+import { useI18n } from '@/shared/i18n/i18n';
 
 export default function BatchPage() {
+  const { t } = useI18n();
   const { rows, validRows, addRow, addRows, updateRow, removeRow, clearRows } = useBatchRows();
   const [generating, setGenerating] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -25,9 +27,9 @@ export default function BatchPage() {
     try {
       const newRows = parseCsvRows(await file.text());
       addRows(newRows);
-      toast.success(`Imported ${newRows.length} rows`);
+      toast.success(`${t.batch.importedRows} ${newRows.length} ${t.batch.rows}`);
     } catch {
-      toast.error('Could not import file');
+      toast.error(t.batch.importFailed);
     }
     e.target.value = '';
   };
@@ -40,14 +42,14 @@ export default function BatchPage() {
   };
 
   const generateAll = async () => {
-    if (rows.length === 0) { toast.error('Add some data first'); return; }
+    if (rows.length === 0) { toast.error(t.batch.addSomeData); return; }
     setGenerating(true);
     try {
       const zipBlob = await generateBatchZip(rows, updateRow);
       downloadBlob(zipBlob, 'qr-codes-batch.zip');
-      toast.success('Batch generated and downloaded!');
+      toast.success(t.batch.batchSuccess);
     } catch {
-      toast.error('Batch generation failed');
+      toast.error(t.batch.batchFailed);
     } finally {
       setGenerating(false);
     }
@@ -56,26 +58,26 @@ export default function BatchPage() {
   return (
     <div className="container px-4 py-6 max-w-4xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground mb-2">Batch Generator</h1>
-        <p className="text-muted-foreground">Generate multiple QR codes at once. Upload a CSV or add rows manually.</p>
+        <h1 className="text-2xl font-bold text-foreground mb-2">{t.batch.title}</h1>
+        <p className="text-muted-foreground">{t.batch.description}</p>
       </div>
 
       <div className="space-y-6">
         <div className="flex gap-3 flex-wrap">
           <Button variant="outline" className="gap-2" onClick={() => fileRef.current?.click()}>
-            <Upload className="h-4 w-4" /> Import CSV
+            <Upload className="h-4 w-4" /> {t.batch.importCsv}
           </Button>
           <Button variant="outline" className="gap-2" onClick={addRow}>
-            <Plus className="h-4 w-4" /> Add Row
+            <Plus className="h-4 w-4" /> {t.batch.addRow}
           </Button>
           <input ref={fileRef} type="file" accept=".csv,.txt" onChange={handleCSVUpload} className="hidden" />
-          <p className="text-xs text-muted-foreground self-center">CSV format: data,label (one per line)</p>
+          <p className="text-xs text-muted-foreground self-center">{t.batch.csvFormat}</p>
         </div>
 
         <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">Quick Paste (one URL per line)</Label>
+          <Label className="text-xs text-muted-foreground">{t.batch.quickPaste}</Label>
           <Textarea
-            placeholder="Paste multiple URLs here, one per line..."
+            placeholder={t.batch.pastePlaceholder}
             rows={3}
             onPaste={(e) => {
               const text = e.clipboardData.getData('text');
@@ -87,7 +89,7 @@ export default function BatchPage() {
         {rows.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">{rows.length} items · {validRows.length} valid</Label>
+              <Label className="text-xs text-muted-foreground">{rows.length} {t.batch.items} · {validRows.length} {t.batch.valid}</Label>
             </div>
             <div className="space-y-1.5 max-h-96 overflow-y-auto">
               {rows.map((row, i) => (
@@ -96,8 +98,8 @@ export default function BatchPage() {
                   row.status === 'completed' ? 'border-success/30 bg-success/5' : row.status === 'error' ? 'border-destructive/30 bg-destructive/5' : 'border-border'
                 )}>
                   <span className="text-xs text-muted-foreground w-6 text-center">{i + 1}</span>
-                  <Input value={row.data} onChange={e => updateRow(row.id, { data: e.target.value })} placeholder="URL or data" className="flex-1 h-8 text-xs" />
-                  <Input value={row.label} onChange={e => updateRow(row.id, { label: e.target.value })} placeholder="Label" className="w-32 h-8 text-xs" />
+                  <Input value={row.data} onChange={e => updateRow(row.id, { data: e.target.value })} placeholder={t.batch.dataPlaceholder} className="flex-1 h-8 text-xs" />
+                  <Input value={row.label} onChange={e => updateRow(row.id, { label: e.target.value })} placeholder={t.batch.labelPlaceholder} className="w-32 h-8 text-xs" />
                   {row.status === 'completed' && <CheckCircle className="h-4 w-4 text-success shrink-0" />}
                   {row.status === 'error' && <AlertCircle className="h-4 w-4 text-destructive shrink-0" />}
                   <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeRow(row.id)}>
@@ -112,10 +114,10 @@ export default function BatchPage() {
         <div className="flex gap-3">
           <Button onClick={generateAll} disabled={generating || validRows.length === 0} className="gap-2">
             {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            {generating ? 'Generating...' : `Generate ${validRows.length} QR Codes`}
+            {generating ? t.batch.generating : `${t.batch.generate} ${validRows.length} ${t.batch.qrCodes}`}
           </Button>
           {rows.length > 0 && (
-            <Button variant="outline" onClick={clearRows}>Clear All</Button>
+            <Button variant="outline" onClick={clearRows}>{t.batch.clearAll}</Button>
           )}
         </div>
       </div>

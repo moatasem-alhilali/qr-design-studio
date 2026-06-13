@@ -5,6 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import {
+  localizeFrameConfig,
+  translateFramePreset,
+  translateFrameSuggestion,
+  useI18n,
+} from '@/shared/i18n/i18n';
 
 interface QRFrameEditorProps {
   frame: FrameConfig;
@@ -37,24 +43,29 @@ function ColorField({
 }
 
 export function QRFrameEditor({ frame, onChange }: QRFrameEditorProps) {
+  const { locale, t } = useI18n();
   const update = (updates: Partial<FrameConfig>) => onChange({ ...frame, ...updates });
 
   return (
     <div className="space-y-5">
       <div className="space-y-3">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Frame Style</Label>
+        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t.frameEditor.frameStyle}</Label>
         <div className="grid grid-cols-2 gap-2">
-          {framePresets.map((preset) => (
-            <button
-              key={preset.type}
-              onClick={() => onChange({ ...frame, ...preset.config } as FrameConfig)}
-              className={cn(
-                "rounded-xl border p-3 text-left transition-all",
-                frame.type === preset.type
-                  ? "border-primary bg-accent text-accent-foreground shadow-sm"
-                  : "border-border bg-card hover:border-primary/30 hover:bg-muted/60"
-              )}
-            >
+          {framePresets.map((preset) => {
+            const translatedPreset = translateFramePreset(locale, preset.type, preset.name, preset.description);
+            const localizedConfig = localizeFrameConfig(locale, preset.config);
+
+            return (
+              <button
+                key={preset.type}
+                onClick={() => onChange({ ...frame, ...localizedConfig } as FrameConfig)}
+                className={cn(
+                  "rounded-xl border p-3 text-start transition-all",
+                  frame.type === preset.type
+                    ? "border-primary bg-accent text-accent-foreground shadow-sm"
+                    : "border-border bg-card hover:border-primary/30 hover:bg-muted/60"
+                )}
+              >
               <div className="mb-3 flex items-center justify-between gap-2">
                 <div
                   className="h-9 w-9 rounded-lg border"
@@ -79,14 +90,15 @@ export function QRFrameEditor({ frame, onChange }: QRFrameEditorProps) {
                       color: preset.config.badgeTextColor,
                     }}
                   >
-                    {preset.config.badgeText}
+                    {translateFrameSuggestion(locale, preset.config.badgeText)}
                   </span>
                 )}
               </div>
-              <span className="block text-sm font-semibold">{preset.name}</span>
-              <span className="mt-1 block text-[11px] opacity-75">{preset.description}</span>
+              <span className="block text-sm font-semibold">{translatedPreset.name}</span>
+              <span className="mt-1 block text-[11px] opacity-75">{translatedPreset.description}</span>
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -94,56 +106,56 @@ export function QRFrameEditor({ frame, onChange }: QRFrameEditorProps) {
         <>
           <div className="space-y-4 rounded-xl border border-border bg-card/60 p-4">
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-foreground">Messaging</h3>
-              <p className="text-xs text-muted-foreground">Add a badge, headline, and CTA to make the frame feel like a real campaign card.</p>
+              <h3 className="text-sm font-semibold text-foreground">{t.frameEditor.messaging}</h3>
+              <p className="text-xs text-muted-foreground">{t.frameEditor.messagingDescription}</p>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Badge Label</Label>
-              <Input value={frame.badgeText} onChange={e => update({ badgeText: e.target.value })} placeholder="Quick Access" className="text-sm" />
+              <Label className="text-xs text-muted-foreground">{t.frameEditor.badgeLabel}</Label>
+              <Input value={frame.badgeText} onChange={e => update({ badgeText: e.target.value })} placeholder={t.frameEditor.badgePlaceholder} className="text-sm" />
               <div className="flex flex-wrap gap-1.5">
                 {frameBadgeSuggestions.map((suggestion) => (
                   <Badge
                     key={suggestion}
                     variant="outline"
                     className="cursor-pointer text-[10px] hover:bg-accent"
-                    onClick={() => update({ badgeText: suggestion })}
+                    onClick={() => update({ badgeText: translateFrameSuggestion(locale, suggestion) })}
                   >
-                    {suggestion}
+                    {translateFrameSuggestion(locale, suggestion)}
                   </Badge>
                 ))}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Text Above</Label>
-              <Input value={frame.textTop} onChange={e => update({ textTop: e.target.value })} placeholder="Optional top text" className="text-sm" />
+              <Label className="text-xs text-muted-foreground">{t.frameEditor.textAbove}</Label>
+              <Input value={frame.textTop} onChange={e => update({ textTop: e.target.value })} placeholder={t.frameEditor.textAbovePlaceholder} className="text-sm" />
               <div className="flex flex-wrap gap-1.5">
                 {frameTopSuggestions.map((suggestion) => (
                   <Badge
                     key={suggestion}
                     variant="outline"
                     className="cursor-pointer text-[10px] hover:bg-accent"
-                    onClick={() => update({ textTop: suggestion })}
+                    onClick={() => update({ textTop: translateFrameSuggestion(locale, suggestion) })}
                   >
-                    {suggestion}
+                    {translateFrameSuggestion(locale, suggestion)}
                   </Badge>
                 ))}
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label className="text-xs text-muted-foreground">Text Below</Label>
-              <Input value={frame.textBottom} onChange={e => update({ textBottom: e.target.value })} placeholder="Scan Me" className="text-sm" />
+              <Label className="text-xs text-muted-foreground">{t.frameEditor.textBelow}</Label>
+              <Input value={frame.textBottom} onChange={e => update({ textBottom: e.target.value })} placeholder={t.frameEditor.textBelowPlaceholder} className="text-sm" />
               <div className="flex flex-wrap gap-1.5">
                 {frameSuggestions.slice(0, 8).map((suggestion) => (
                   <Badge
                     key={suggestion}
                     variant="outline"
                     className="cursor-pointer text-[10px] hover:bg-accent"
-                    onClick={() => update({ textBottom: suggestion })}
+                    onClick={() => update({ textBottom: translateFrameSuggestion(locale, suggestion) })}
                   >
-                    {suggestion}
+                    {translateFrameSuggestion(locale, suggestion)}
                   </Badge>
                 ))}
               </div>
@@ -152,49 +164,49 @@ export function QRFrameEditor({ frame, onChange }: QRFrameEditorProps) {
 
           <div className="space-y-4 rounded-xl border border-border bg-card/60 p-4">
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-foreground">Color System</h3>
-              <p className="text-xs text-muted-foreground">Build a more premium card using accent color, badge styling, and a dedicated QR panel background.</p>
+              <h3 className="text-sm font-semibold text-foreground">{t.frameEditor.colorSystem}</h3>
+              <p className="text-xs text-muted-foreground">{t.frameEditor.colorSystemDescription}</p>
             </div>
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-              <ColorField label="Frame Background" value={frame.bgColor} onChange={(value) => update({ bgColor: value })} />
-              <ColorField label="Frame Border" value={frame.borderColor} onChange={(value) => update({ borderColor: value })} />
-              <ColorField label="Text Color" value={frame.textColor} onChange={(value) => update({ textColor: value })} />
-              <ColorField label="Accent Color" value={frame.accentColor} onChange={(value) => update({ accentColor: value })} />
-              <ColorField label="Badge Background" value={frame.badgeColor} onChange={(value) => update({ badgeColor: value })} />
-              <ColorField label="Badge Text" value={frame.badgeTextColor} onChange={(value) => update({ badgeTextColor: value })} />
-              <ColorField label="QR Panel Background" value={frame.qrBackgroundColor} onChange={(value) => update({ qrBackgroundColor: value })} />
+              <ColorField label={t.frameEditor.frameBackground} value={frame.bgColor} onChange={(value) => update({ bgColor: value })} />
+              <ColorField label={t.frameEditor.frameBorder} value={frame.borderColor} onChange={(value) => update({ borderColor: value })} />
+              <ColorField label={t.frameEditor.textColor} value={frame.textColor} onChange={(value) => update({ textColor: value })} />
+              <ColorField label={t.frameEditor.accentColor} value={frame.accentColor} onChange={(value) => update({ accentColor: value })} />
+              <ColorField label={t.frameEditor.badgeBackground} value={frame.badgeColor} onChange={(value) => update({ badgeColor: value })} />
+              <ColorField label={t.frameEditor.badgeText} value={frame.badgeTextColor} onChange={(value) => update({ badgeTextColor: value })} />
+              <ColorField label={t.frameEditor.qrPanelBackground} value={frame.qrBackgroundColor} onChange={(value) => update({ qrBackgroundColor: value })} />
             </div>
           </div>
 
           <div className="space-y-4 rounded-xl border border-border bg-card/60 p-4">
             <div className="space-y-1">
-              <h3 className="text-sm font-semibold text-foreground">Shape and Depth</h3>
-              <p className="text-xs text-muted-foreground">Tune spacing, radius, border, and shadow to make the frame feel softer, sharper, or more premium.</p>
+              <h3 className="text-sm font-semibold text-foreground">{t.frameEditor.shapeDepth}</h3>
+              <p className="text-xs text-muted-foreground">{t.frameEditor.shapeDepthDescription}</p>
             </div>
 
             <div className="space-y-3">
-              <Label className="text-xs text-muted-foreground">Outer Padding: {frame.padding}px</Label>
+              <Label className="text-xs text-muted-foreground">{t.frameEditor.outerPadding}: {frame.padding}px</Label>
               <Slider value={[frame.padding]} onValueChange={([value]) => update({ padding: value })} min={10} max={40} step={2} />
             </div>
 
             <div className="space-y-3">
-              <Label className="text-xs text-muted-foreground">Font Size: {frame.fontSize}px</Label>
+              <Label className="text-xs text-muted-foreground">{t.frameEditor.fontSize}: {frame.fontSize}px</Label>
               <Slider value={[frame.fontSize]} onValueChange={([value]) => update({ fontSize: value })} min={12} max={26} step={1} />
             </div>
 
             <div className="space-y-3">
-              <Label className="text-xs text-muted-foreground">Border Width: {frame.borderWidth}px</Label>
+              <Label className="text-xs text-muted-foreground">{t.frameEditor.borderWidth}: {frame.borderWidth}px</Label>
               <Slider value={[frame.borderWidth]} onValueChange={([value]) => update({ borderWidth: value })} min={0} max={8} step={1} />
             </div>
 
             <div className="space-y-3">
-              <Label className="text-xs text-muted-foreground">Corner Radius: {frame.cornerRadius}px</Label>
+              <Label className="text-xs text-muted-foreground">{t.frameEditor.cornerRadius}: {frame.cornerRadius}px</Label>
               <Slider value={[frame.cornerRadius]} onValueChange={([value]) => update({ cornerRadius: value })} min={8} max={40} step={2} />
             </div>
 
             <div className="space-y-3">
-              <Label className="text-xs text-muted-foreground">Shadow Depth: {frame.shadow}px</Label>
+              <Label className="text-xs text-muted-foreground">{t.frameEditor.shadowDepth}: {frame.shadow}px</Label>
               <Slider value={[frame.shadow]} onValueChange={([value]) => update({ shadow: value })} min={0} max={36} step={2} />
             </div>
           </div>

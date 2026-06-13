@@ -1,15 +1,16 @@
-import { BarcodeConfig, BarcodeDataType, BarcodeFormat, barcodeFormatHints, getBarcodePlaceholder, getSuggestedBarcodeFormat } from "@/lib/barcode-engine";
+import { BarcodeConfig, BarcodeDataType, BarcodeFormat, getBarcodePlaceholder, getSuggestedBarcodeFormat } from "@/lib/barcode-engine";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link, Mail, Phone, Package2, Type, Barcode, Rows3 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getBarcodeFormatHint, useI18n } from "@/shared/i18n/i18n";
 
-const dataTypes: { value: BarcodeDataType; label: string; icon: React.ElementType }[] = [
-  { value: "product", label: "Product", icon: Package2 },
-  { value: "text", label: "Text", icon: Type },
-  { value: "url", label: "URL", icon: Link },
-  { value: "email", label: "Email", icon: Mail },
-  { value: "phone", label: "Phone", icon: Phone },
+const dataTypes: { value: BarcodeDataType; icon: React.ElementType }[] = [
+  { value: "product", icon: Package2 },
+  { value: "text", icon: Type },
+  { value: "url", icon: Link },
+  { value: "email", icon: Mail },
+  { value: "phone", icon: Phone },
 ];
 
 const formats: { value: BarcodeFormat; label: string; compact?: string }[] = [
@@ -30,14 +31,16 @@ interface BarcodeDataInputProps {
 }
 
 export function BarcodeDataInput({ config, onChange }: BarcodeDataInputProps) {
+  const { locale, t } = useI18n();
+
   return (
     <div className="space-y-4">
       <div className="space-y-2">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Content Type
+          {t.barcodeControls.contentType}
         </Label>
         <div className="grid grid-cols-5 gap-1.5">
-          {dataTypes.map(({ value, label, icon: Icon }) => (
+          {dataTypes.map(({ value, icon: Icon }) => (
             <button
               key={value}
               onClick={() => onChange({
@@ -53,7 +56,7 @@ export function BarcodeDataInput({ config, onChange }: BarcodeDataInputProps) {
               )}
             >
               <Icon className="h-4 w-4" />
-              {label}
+              {t.values.barcodeDataTypes[value]}
             </button>
           ))}
         </div>
@@ -61,7 +64,7 @@ export function BarcodeDataInput({ config, onChange }: BarcodeDataInputProps) {
 
       <div className="space-y-2">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Barcode Format
+          {t.barcodeControls.barcodeFormat}
         </Label>
         <div className="grid grid-cols-3 gap-1.5">
           {formats.map(({ value, label }) => (
@@ -80,36 +83,36 @@ export function BarcodeDataInput({ config, onChange }: BarcodeDataInputProps) {
           ))}
         </div>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          {barcodeFormatHints[config.format]}
+          {getBarcodeFormatHint(locale, config.format)}
         </p>
       </div>
 
       <div className="space-y-2">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Encoded Value
+          {t.barcodeControls.encodedValue}
         </Label>
         <div className="relative">
-          <Barcode className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Barcode className="absolute start-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             value={config.value}
             onChange={(e) => onChange({ value: e.target.value })}
             placeholder={getBarcodePlaceholder(config.dataType)}
-            className="pl-10 font-mono text-sm"
+            className="ps-10 font-mono text-sm"
           />
         </div>
       </div>
 
       <div className="space-y-2">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Display Text
+          {t.barcodeControls.displayText}
         </Label>
         <div className="relative">
-          <Rows3 className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+          <Rows3 className="absolute start-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
             value={config.customText}
             onChange={(e) => onChange({ customText: e.target.value })}
-            placeholder="Optional label under the barcode"
-            className="pl-10 text-sm"
+            placeholder={t.barcodeControls.displayTextPlaceholder}
+            className="ps-10 text-sm"
           />
         </div>
       </div>

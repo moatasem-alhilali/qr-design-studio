@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { FrameConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { exportFramedSvg, getFrameMetrics, getTypography, renderFramedCanvas, scaleFrameConfig, withAlpha } from "@/components/code/frame-utils";
+import { useI18n } from "@/shared/i18n/i18n";
 
 interface QRPreviewProps {
   config: QRConfig;
@@ -13,6 +14,7 @@ interface QRPreviewProps {
 }
 
 export function QRPreview({ config, frame }: QRPreviewProps) {
+  const { t } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const matrixRef = useRef<ReturnType<typeof generateQRMatrix> | null>(null);
   const hasFrame = Boolean(frame && frame.type !== "none");
@@ -199,7 +201,7 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
 
       <div className="text-center">
         <p className="font-mono text-xs text-muted-foreground">
-          {config.size}×{config.size}px · Error correction: {config.errorCorrection}
+          {config.size}×{config.size}px · {t.qrControls.errorCorrectionShort}: {config.errorCorrection}
         </p>
       </div>
     </div>

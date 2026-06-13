@@ -3,11 +3,12 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { cn } from "@/lib/utils";
 import { RectangleHorizontal, Pill, Columns2, Type, AlignLeft, AlignCenter, AlignRight } from "lucide-react";
+import { useI18n } from "@/shared/i18n/i18n";
 
-const shapes: { value: BarcodeShape; label: string; icon: React.ElementType }[] = [
-  { value: "square", label: "Square", icon: Columns2 },
-  { value: "rounded", label: "Rounded", icon: RectangleHorizontal },
-  { value: "pill", label: "Pill", icon: Pill },
+const shapes: { value: BarcodeShape; icon: React.ElementType }[] = [
+  { value: "square", icon: Columns2 },
+  { value: "rounded", icon: RectangleHorizontal },
+  { value: "pill", icon: Pill },
 ];
 
 interface BarcodeStyleControlsProps {
@@ -16,6 +17,7 @@ interface BarcodeStyleControlsProps {
 }
 
 export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsProps) {
+  const { t } = useI18n();
   const fontStyleLabel =
     config.fontWeight === "bold" && config.fontStyle === "italic"
       ? "bold-italic"
@@ -29,10 +31,10 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
     <div className="space-y-6">
       <div className="space-y-3">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Bar Shape
+          {t.barcodeControls.barShape}
         </Label>
         <div className="grid grid-cols-3 gap-1.5">
-          {shapes.map(({ value, label, icon: Icon }) => (
+          {shapes.map(({ value, icon: Icon }) => (
             <button
               key={value}
               onClick={() => onChange({ barShape: value })}
@@ -44,7 +46,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
               )}
             >
               <Icon className="h-4 w-4" />
-              {label}
+              {t.values.shapes[value]}
             </button>
           ))}
         </div>
@@ -52,7 +54,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
 
       <div className="space-y-3">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Color Mode
+          {t.barcodeControls.colorMode}
         </Label>
         <div className="flex gap-2">
           {(["single", "gradient"] as const).map((mode) => (
@@ -66,14 +68,14 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
                   : "border-border bg-card text-muted-foreground hover:bg-muted"
               )}
             >
-              {mode}
+              {t.values.colorModes[mode]}
             </button>
           ))}
         </div>
 
         <div className="flex gap-3 items-center">
           <div className="space-y-1 flex-1">
-            <label className="text-xs text-muted-foreground">Bar Color</label>
+            <label className="text-xs text-muted-foreground">{t.barcodeControls.barColor}</label>
             <div className="flex gap-2 items-center">
               <input
                 type="color"
@@ -86,7 +88,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
           </div>
           {config.colorMode === "gradient" && (
             <div className="space-y-1 flex-1">
-              <label className="text-xs text-muted-foreground">Accent Color</label>
+              <label className="text-xs text-muted-foreground">{t.barcodeControls.accentColor}</label>
               <div className="flex gap-2 items-center">
                 <input
                   type="color"
@@ -101,7 +103,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Background</label>
+          <label className="text-xs text-muted-foreground">{t.barcodeControls.background}</label>
           <div className="flex gap-2 items-center">
             <input
               type="color"
@@ -119,7 +121,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
                   : "border-border text-muted-foreground hover:bg-muted"
               )}
             >
-              Transparent
+              {t.barcodeControls.transparent}
             </button>
           </div>
         </div>
@@ -127,7 +129,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
         {config.colorMode === "gradient" && (
           <div className="space-y-2">
             <label className="text-xs text-muted-foreground">
-              Gradient Angle: {config.gradientAngle}°
+              {t.barcodeControls.gradientAngle}: {config.gradientAngle}°
             </label>
             <Slider
               value={[config.gradientAngle]}
@@ -142,7 +144,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
 
       <div className="space-y-2">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Bar Width: {config.barWidth}px
+          {t.barcodeControls.barWidth}: {config.barWidth}px
         </Label>
         <Slider
           value={[config.barWidth]}
@@ -155,7 +157,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
 
       <div className="space-y-2">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Height: {config.height}px
+          {t.barcodeControls.height}: {config.height}px
         </Label>
         <Slider
           value={[config.height]}
@@ -168,7 +170,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
 
       <div className="space-y-2">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Quiet Zone: {config.margin}px
+          {t.barcodeControls.quietZone}: {config.margin}px
         </Label>
         <Slider
           value={[config.margin]}
@@ -181,7 +183,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
 
       <div className="space-y-3">
         <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Human Readable Text
+          {t.barcodeControls.humanReadableText}
         </Label>
         <div className="flex gap-2">
           <button
@@ -193,7 +195,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
                 : "border-border bg-card text-muted-foreground hover:bg-muted"
             )}
           >
-            {config.showText ? "Visible" : "Hidden"}
+            {config.showText ? t.barcodeControls.visible : t.barcodeControls.hidden}
           </button>
           <button
             onClick={() => onChange({ flat: !config.flat })}
@@ -204,7 +206,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
                 : "border-border bg-card text-muted-foreground hover:bg-muted"
             )}
           >
-            Flat Guards
+            {t.barcodeControls.flatGuards}
           </button>
         </div>
 
@@ -222,7 +224,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
                       : "border-border bg-card text-muted-foreground hover:bg-muted"
                   )}
                 >
-                  {position}
+                  {t.values.textPositions[position]}
                 </button>
               ))}
             </div>
@@ -250,7 +252,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
 
             <div className="space-y-2">
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Font Size: {config.fontSize}px
+                {t.barcodeControls.fontSize}: {config.fontSize}px
               </Label>
               <Slider
                 value={[config.fontSize]}
@@ -263,7 +265,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
 
             <div className="space-y-2">
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Text Gap: {config.textMargin}px
+                {t.barcodeControls.textGap}: {config.textMargin}px
               </Label>
               <Slider
                 value={[config.textMargin]}
@@ -276,7 +278,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
 
             <div className="space-y-2">
               <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Text Style
+                {t.barcodeControls.textStyle}
               </Label>
               <div className="flex gap-2">
                 <button
@@ -288,7 +290,7 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
                       : "border-border bg-card text-muted-foreground hover:bg-muted"
                   )}
                 >
-                  Bold
+                  {t.barcodeControls.bold}
                 </button>
                 <button
                   onClick={() => onChange({ fontStyle: config.fontStyle === "italic" ? "normal" : "italic" })}
@@ -299,12 +301,12 @@ export function BarcodeStyleControls({ config, onChange }: BarcodeStyleControlsP
                       : "border-border bg-card text-muted-foreground hover:bg-muted"
                   )}
                 >
-                  Italic
+                  {t.barcodeControls.italic}
                 </button>
               </div>
               <p className="text-[11px] text-muted-foreground flex items-center gap-1">
                 <Type className="h-3 w-3" />
-                Current: {fontStyleLabel}
+                {t.barcodeControls.current}: {t.values.fontStyles[fontStyleLabel]}
               </p>
             </div>
           </>

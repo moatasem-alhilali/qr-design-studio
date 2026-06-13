@@ -4,30 +4,33 @@ import {
   getTemplateIcon,
   getTemplatesByCategory,
 } from '@/features/templates/services/template-catalog';
+import { translateTemplate, translateTemplateCategory, useI18n } from '@/shared/i18n/i18n';
 
 const categories = getTemplateCategories();
 
 export default function Templates() {
   const applyTemplate = useApplyTemplate();
+  const { locale, t } = useI18n();
 
   return (
     <div className="container px-4 py-6 max-w-5xl">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground mb-2">Templates</h1>
-        <p className="text-muted-foreground">Choose a template to quickly create the perfect QR code for your use case.</p>
+        <h1 className="text-2xl font-bold text-foreground mb-2">{t.templates.title}</h1>
+        <p className="text-muted-foreground">{t.templates.description}</p>
       </div>
 
       {categories.map(cat => (
         <div key={cat} className="mb-8">
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">{cat}</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">{translateTemplateCategory(locale, cat)}</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {getTemplatesByCategory(cat).map(tmpl => {
               const Icon = getTemplateIcon(tmpl.icon);
+              const translatedTemplate = translateTemplate(locale, tmpl);
               return (
                 <button
                   key={tmpl.id}
                   onClick={() => applyTemplate(tmpl)}
-                  className="group rounded-2xl border border-border bg-card p-4 text-left transition-all hover:border-primary/25 hover:bg-muted/40"
+                  className="group rounded-2xl border border-border bg-card p-4 text-start transition-all hover:border-primary/25 hover:bg-muted/40"
                 >
                   <div className="flex items-start gap-3">
                     <div
@@ -41,19 +44,19 @@ export default function Templates() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center justify-between gap-3">
-                        <h3 className="text-sm font-semibold text-foreground transition-colors group-hover:text-primary">{tmpl.name}</h3>
+                        <h3 className="text-sm font-semibold text-foreground transition-colors group-hover:text-primary">{translatedTemplate.name}</h3>
                         <span className="rounded-full bg-muted px-2 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                          {tmpl.category}
+                          {translateTemplateCategory(locale, tmpl.category)}
                         </span>
                       </div>
-                      <p className="mt-1 text-xs text-muted-foreground">{tmpl.description}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{translatedTemplate.description}</p>
                       <div className="mt-3 flex items-center gap-2">
                         <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tmpl.config.color1 }} />
                         <span className="text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                          {tmpl.config.moduleStyle}
+                          {t.values.moduleStyles[tmpl.config.moduleStyle ?? 'rounded']}
                         </span>
                       </div>
-                      <p className="mt-2 text-[10px] text-muted-foreground">Suggested frame: "{tmpl.suggestedFrame}"</p>
+                      <p className="mt-2 text-[10px] text-muted-foreground">{t.templates.suggestedFrame}: "{translatedTemplate.suggestedFrame}"</p>
                     </div>
                   </div>
                 </button>

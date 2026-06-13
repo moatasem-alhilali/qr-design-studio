@@ -3,6 +3,7 @@ import { analyzeScanReliability } from '@/lib/scan-reliability';
 import { FrameConfig } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { ShieldCheck, AlertTriangle, AlertCircle, Info } from 'lucide-react';
+import { translateReliabilityGrade, translateReliabilityText, useI18n } from '@/shared/i18n/i18n';
 
 interface ScanReliabilityPanelProps {
   config: QRConfig;
@@ -23,6 +24,7 @@ const severityIcons = {
 };
 
 export function ScanReliabilityPanel({ config, frame }: ScanReliabilityPanelProps) {
+  const { locale, t } = useI18n();
   const result = analyzeScanReliability(config, frame);
 
   return (
@@ -30,8 +32,8 @@ export function ScanReliabilityPanel({ config, frame }: ScanReliabilityPanelProp
       <div className={cn("flex items-center gap-3 rounded-lg border p-3", gradeColors[result.grade])}>
         <ShieldCheck className="h-5 w-5 shrink-0" />
         <div>
-          <p className="font-semibold text-sm">{result.grade}</p>
-          <p className="text-xs opacity-80">Reliability score: {result.score}/100</p>
+          <p className="font-semibold text-sm">{translateReliabilityGrade(locale, result.grade)}</p>
+          <p className="text-xs opacity-80">{t.qrControls.reliabilityScore}: {result.score}/100</p>
         </div>
       </div>
 
@@ -46,8 +48,8 @@ export function ScanReliabilityPanel({ config, frame }: ScanReliabilityPanelProp
                   issue.severity === 'error' ? 'text-destructive' : issue.severity === 'warning' ? 'text-warning' : 'text-muted-foreground'
                 )} />
                 <div>
-                  <p className="font-medium text-foreground">{issue.message}</p>
-                  <p className="text-muted-foreground">{issue.suggestion}</p>
+                  <p className="font-medium text-foreground">{translateReliabilityText(locale, issue.message)}</p>
+                  <p className="text-muted-foreground">{translateReliabilityText(locale, issue.suggestion)}</p>
                 </div>
               </div>
             );
@@ -56,7 +58,7 @@ export function ScanReliabilityPanel({ config, frame }: ScanReliabilityPanelProp
       )}
 
       {result.issues.length === 0 && (
-        <p className="text-xs text-muted-foreground text-center py-2">No issues found. Your QR code should scan reliably.</p>
+        <p className="text-xs text-muted-foreground text-center py-2">{t.qrControls.noIssues}</p>
       )}
     </div>
   );

@@ -16,8 +16,10 @@ import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useDesignerState, type DesignType } from "@/features/designer/hooks/useDesignerState";
+import { useI18n } from "@/shared/i18n/i18n";
 
 const Index = () => {
+  const { t } = useI18n();
   const {
     designType,
     config,
@@ -40,11 +42,11 @@ const Index = () => {
           <ScrollArea className="h-[calc(100vh-6rem)]">
             <div className="space-y-6 pr-2">
               <div className="panel-section">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 block">Generator</Label>
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 block">{t.home.generator}</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { value: "qr", label: "QR Code", icon: QrCode },
-                    { value: "barcode", label: "Barcode", icon: Barcode },
+                    { value: "qr", label: t.home.qrCode, icon: QrCode },
+                    { value: "barcode", label: t.home.barcode, icon: Barcode },
                   ].map(({ value, label, icon: Icon }) => (
                     <button
                       key={value}
@@ -64,18 +66,18 @@ const Index = () => {
               </div>
 
               <div className="panel-section">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Mode</Label>
-                <p className="text-sm text-foreground">{designType === "qr" ? "Static QR" : "Static Barcode"}</p>
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">{t.home.mode}</Label>
+                <p className="text-sm text-foreground">{designType === "qr" ? t.home.staticQr : t.home.staticBarcode}</p>
                 <p className="text-[11px] text-muted-foreground mt-1">
                   {designType === "qr"
-                    ? "Generate static QR codes with custom styling, frames, and exports."
-                    : "Generate printable barcodes with multiple symbologies, styling, labels, and exports."}
+                    ? t.home.qrDescription
+                    : t.home.barcodeDescription}
                 </p>
               </div>
 
               <div className="panel-section">
                 <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                  {designType === "qr" ? <QrCode className="h-4 w-4 text-primary" /> : <Barcode className="h-4 w-4 text-primary" />} Data
+                  {designType === "qr" ? <QrCode className="h-4 w-4 text-primary" /> : <Barcode className="h-4 w-4 text-primary" />} {t.home.data}
                 </h2>
                 {designType === "qr" ? (
                   <DataInput config={config} onChange={handleChange} />
@@ -86,7 +88,7 @@ const Index = () => {
 
               <div className="panel-section">
                 <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Palette className="h-4 w-4 text-primary" /> Style
+                  <Palette className="h-4 w-4 text-primary" /> {t.home.style}
                 </h2>
                 {designType === "qr" ? (
                   <StyleControls config={config} onChange={handleChange} />
@@ -112,9 +114,9 @@ const Index = () => {
           <ScrollArea className="h-[calc(100vh-6rem)]">
             <Tabs defaultValue="presets" className="pr-2">
               <TabsList className="w-full grid grid-cols-3 mb-3">
-                <TabsTrigger value="presets" className="text-xs"><Sparkles className="h-3 w-3 mr-1" />Presets</TabsTrigger>
-                <TabsTrigger value="frame" className="text-xs"><Square className="h-3 w-3 mr-1" />Frame</TabsTrigger>
-                <TabsTrigger value="quality" className="text-xs"><ShieldCheck className="h-3 w-3 mr-1" />Quality</TabsTrigger>
+                <TabsTrigger value="presets" className="text-xs"><Sparkles className="h-3 w-3 me-1" />{t.home.presets}</TabsTrigger>
+                <TabsTrigger value="frame" className="text-xs"><Square className="h-3 w-3 me-1" />{t.home.frame}</TabsTrigger>
+                <TabsTrigger value="quality" className="text-xs"><ShieldCheck className="h-3 w-3 me-1" />{t.home.quality}</TabsTrigger>
               </TabsList>
               <TabsContent value="presets" className="panel-section">
                 {designType === "qr" ? (
@@ -142,8 +144,8 @@ const Index = () => {
       <div className="lg:hidden space-y-6">
         <div className="grid grid-cols-2 gap-2">
           {[
-            { value: "qr", label: "QR Code", icon: QrCode },
-            { value: "barcode", label: "Barcode", icon: Barcode },
+            { value: "qr", label: t.home.qrCode, icon: QrCode },
+            { value: "barcode", label: t.home.barcode, icon: Barcode },
           ].map(({ value, label, icon: Icon }) => (
             <button
               key={value}
@@ -162,12 +164,12 @@ const Index = () => {
         </div>
 
         <div className="panel-section">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">Mode</Label>
-          <p className="text-sm text-foreground">{designType === "qr" ? "Static QR" : "Static Barcode"}</p>
+          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">{t.home.mode}</Label>
+          <p className="text-sm text-foreground">{designType === "qr" ? t.home.staticQr : t.home.staticBarcode}</p>
           <p className="text-[11px] text-muted-foreground mt-1">
             {designType === "qr"
-              ? "Generate static QR codes with custom styling, frames, and exports."
-              : "Generate printable barcodes with multiple symbologies, styling, labels, and exports."}
+              ? t.home.qrDescription
+              : t.home.barcodeDescription}
           </p>
         </div>
 
@@ -181,11 +183,11 @@ const Index = () => {
 
         <Tabs defaultValue="data" className="w-full">
           <TabsList className="w-full grid grid-cols-5">
-            <TabsTrigger value="data" className="text-[10px]">Data</TabsTrigger>
-            <TabsTrigger value="style" className="text-[10px]">Style</TabsTrigger>
-            <TabsTrigger value="presets" className="text-[10px]">Presets</TabsTrigger>
-            <TabsTrigger value="frame" className="text-[10px]">Frame</TabsTrigger>
-            <TabsTrigger value="quality" className="text-[10px]">Quality</TabsTrigger>
+            <TabsTrigger value="data" className="text-[10px]">{t.home.data}</TabsTrigger>
+            <TabsTrigger value="style" className="text-[10px]">{t.home.style}</TabsTrigger>
+            <TabsTrigger value="presets" className="text-[10px]">{t.home.presets}</TabsTrigger>
+            <TabsTrigger value="frame" className="text-[10px]">{t.home.frame}</TabsTrigger>
+            <TabsTrigger value="quality" className="text-[10px]">{t.home.quality}</TabsTrigger>
           </TabsList>
           <TabsContent value="data" className="panel-section mt-3">
             {designType === "qr" ? (
