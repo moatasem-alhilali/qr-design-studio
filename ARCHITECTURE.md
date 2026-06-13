@@ -143,6 +143,35 @@ The route contract remains `/?template=<id>`.
 Client-side metadata updates live in `shared/seo/page-meta.ts`. Layout consumes
 that helper and should not contain route metadata tables directly.
 
+## Agent Readiness
+
+Public agent discovery is intentionally read-only and limited to the visible
+static app. The project advertises discovery files, not private automation or
+server capabilities:
+
+```txt
+public/llms.txt
+public/openapi.json
+public/.well-known/api-catalog
+public/.well-known/agent-skills/
+public/.well-known/mcp/server-card.json
+public/*/index.md
+```
+
+The OpenAPI file is intentionally empty because this build does not expose a
+public executable REST API. Do not add OAuth/OIDC, account, payment, Firebase,
+dynamic redirect, scan analytics, upload, or mutation claims unless those
+features are implemented in the code and exposed publicly.
+
+`src/shared/agent-readiness/WebMcpTools.tsx` registers optional browser
+`navigator.modelContext` tools when a host environment provides that API. Those
+tools must stay read-only. They can return public guide data, route lists,
+Markdown fallbacks, and discovery URLs only.
+
+`vercel.json` adds production discovery headers and `Link` relations. Local Vite
+dev and preview servers serve the static files but do not emulate all Vercel
+header behavior.
+
 ## Coding Standards
 
 - Prefer absolute imports through `@/`.
@@ -158,4 +187,3 @@ npm run lint
 npm run test
 npm run build
 ```
-

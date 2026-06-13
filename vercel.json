@@ -1,0 +1,197 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/",
+      "headers": [
+        {
+          "key": "Link",
+          "value": "</.well-known/api-catalog>; rel=\"api-catalog\"; type=\"application/linkset+json\", </llms.txt>; rel=\"service-doc\"; type=\"text/plain\", </.well-known/agent-skills/index.json>; rel=\"service-desc\"; type=\"application/json\", </.well-known/mcp/server-card.json>; rel=\"service-desc\"; type=\"application/json\", </openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\", </index.md>; rel=\"alternate\"; type=\"text/markdown\""
+        },
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/templates",
+      "headers": [
+        {
+          "key": "Link",
+          "value": "</.well-known/api-catalog>; rel=\"api-catalog\"; type=\"application/linkset+json\", </llms.txt>; rel=\"service-doc\"; type=\"text/plain\", </.well-known/agent-skills/index.json>; rel=\"service-desc\"; type=\"application/json\", </.well-known/mcp/server-card.json>; rel=\"service-desc\"; type=\"application/json\", </openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\", </templates/index.md>; rel=\"alternate\"; type=\"text/markdown\""
+        },
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/batch",
+      "headers": [
+        {
+          "key": "Link",
+          "value": "</.well-known/api-catalog>; rel=\"api-catalog\"; type=\"application/linkset+json\", </llms.txt>; rel=\"service-doc\"; type=\"text/plain\", </.well-known/agent-skills/index.json>; rel=\"service-desc\"; type=\"application/json\", </.well-known/mcp/server-card.json>; rel=\"service-desc\"; type=\"application/json\", </openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\", </batch/index.md>; rel=\"alternate\"; type=\"text/markdown\""
+        },
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/settings",
+      "headers": [
+        {
+          "key": "Link",
+          "value": "</.well-known/api-catalog>; rel=\"api-catalog\"; type=\"application/linkset+json\", </llms.txt>; rel=\"service-doc\"; type=\"text/plain\", </.well-known/agent-skills/index.json>; rel=\"service-desc\"; type=\"application/json\", </.well-known/mcp/server-card.json>; rel=\"service-desc\"; type=\"application/json\", </openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\", </settings/index.md>; rel=\"alternate\"; type=\"text/markdown\""
+        },
+        {
+          "key": "Vary",
+          "value": "Accept"
+        }
+      ]
+    },
+    {
+      "source": "/llms.txt",
+      "headers": [
+        {
+          "key": "Link",
+          "value": "</.well-known/api-catalog>; rel=\"api-catalog\"; type=\"application/linkset+json\", </.well-known/agent-skills/index.json>; rel=\"service-desc\"; type=\"application/json\", </.well-known/mcp/server-card.json>; rel=\"service-desc\"; type=\"application/json\", </openapi.json>; rel=\"service-desc\"; type=\"application/vnd.oai.openapi+json\""
+        },
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, stale-while-revalidate=3600"
+        }
+      ]
+    },
+    {
+      "source": "/index.md",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/markdown; charset=utf-8"
+        },
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, stale-while-revalidate=3600"
+        }
+      ]
+    },
+    {
+      "source": "/templates/index.md",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/markdown; charset=utf-8"
+        },
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, stale-while-revalidate=3600"
+        }
+      ]
+    },
+    {
+      "source": "/batch/index.md",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/markdown; charset=utf-8"
+        },
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, stale-while-revalidate=3600"
+        }
+      ]
+    },
+    {
+      "source": "/settings/index.md",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/markdown; charset=utf-8"
+        },
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, stale-while-revalidate=3600"
+        }
+      ]
+    },
+    {
+      "source": "/openapi.json",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.oai.openapi+json; charset=utf-8"
+        },
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, stale-while-revalidate=3600"
+        }
+      ]
+    },
+    {
+      "source": "/.well-known/api-catalog",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/linkset+json; charset=utf-8"
+        },
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, stale-while-revalidate=3600"
+        }
+      ]
+    },
+    {
+      "source": "/.well-known/(.*)",
+      "headers": [
+        {
+          "key": "Vary",
+          "value": "Accept"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=300, stale-while-revalidate=3600"
+        }
+      ]
+    }
+  ]
+}

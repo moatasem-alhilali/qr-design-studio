@@ -1,0 +1,41 @@
+# QR Design Studio
+
+QR Design Studio is a static browser-based web app for creating styled QR codes and barcodes, applying templates and frames, checking scan reliability, and exporting files locally from the user's browser.
+
+## Public Pages
+
+- [Home designer](https://qr-design-dun.vercel.app/) - Create and customize static QR codes and barcodes.
+- [Templates](https://qr-design-dun.vercel.app/templates) - Browse public QR style templates and apply them in the visible UI.
+- [Batch Generator](https://qr-design-dun.vercel.app/batch) - Generate multiple static QR codes from pasted rows or a local CSV file.
+- [Settings](https://qr-design-dun.vercel.app/settings) - Public local settings/about page for this build.
+
+## Markdown Alternatives
+
+- [Home Markdown](https://qr-design-dun.vercel.app/index.md)
+- [Templates Markdown](https://qr-design-dun.vercel.app/templates/index.md)
+- [Batch Markdown](https://qr-design-dun.vercel.app/batch/index.md)
+- [Settings Markdown](https://qr-design-dun.vercel.app/settings/index.md)
+
+## Agent Discovery
+
+- API Catalog: https://qr-design-dun.vercel.app/.well-known/api-catalog
+- OpenAPI: https://qr-design-dun.vercel.app/openapi.json
+- Agent Skills: https://qr-design-dun.vercel.app/.well-known/agent-skills/index.json
+- MCP Server Card: https://qr-design-dun.vercel.app/.well-known/mcp/server-card.json
+- Sitemap: https://qr-design-dun.vercel.app/sitemap.xml
+
+## Public API Scope
+
+This deployed app does not expose a public executable REST API, OAuth/OIDC flow, remote MCP transport, checkout, payment flow, account API, dynamic redirect API, or analytics API. The OpenAPI document is intentionally empty until a real public API exists.
+
+## Agent Safety Rules
+
+- Read and summarize public pages only by default.
+- Do not submit forms, upload files, import CSV, export QR files, clear rows, download ZIP files, or change design settings unless the user explicitly asks and performs or confirms the visible action.
+- Do not collect QR payloads, CSV contents, uploaded logos, filenames, personal data, secrets, tokens, WiFi passwords, vCard fields, or private business data.
+- Do not claim dynamic QR redirects, scan analytics, Firebase authentication, saved dashboards, payments, or account features are available in this build unless the official page or code exposes them.
+- Do not invent QR scan reliability, compatibility, pricing, availability, or feature status. Verify from the visible UI or official discovery files.
+
+## Content Use Signal
+
+Search discovery is allowed for public pages. AI training is not granted by this file. AI input use is allowed for answering user questions about public pages and user-provided prompts.

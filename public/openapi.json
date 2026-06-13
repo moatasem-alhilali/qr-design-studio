@@ -1,0 +1,31 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "QR Design Studio Public API",
+    "version": "0.1.0",
+    "description": "QR Design Studio currently exposes no public executable REST API. This document exists for honest agent discovery and will list only documented, safe public APIs if they are added later.",
+    "termsOfService": "https://qr-design-dun.vercel.app/llms.txt"
+  },
+  "servers": [
+    {
+      "url": "https://qr-design-dun.vercel.app",
+      "description": "Static public site origin"
+    }
+  ],
+  "externalDocs": {
+    "description": "Agent-readable site guide",
+    "url": "https://qr-design-dun.vercel.app/llms.txt"
+  },
+  "paths": {},
+  "tags": [],
+  "x-agent-safety": {
+    "readOnly": true,
+    "executableApiAvailable": false,
+    "excluded": "No auth, profile, dashboard, dynamic redirect, analytics, Firebase, payment, checkout, upload, or mutation APIs are advertised.",
+    "instructions": [
+      "Use public pages and Markdown fallbacks for discovery.",
+      "Do not submit forms, upload CSV files, export generated files, or mutate the user's local design state automatically.",
+      "Do not send QR payloads, uploaded logos, filenames, WiFi passwords, vCard fields, or other user-provided content to external services without explicit user approval."
+    ]
+  }
+}

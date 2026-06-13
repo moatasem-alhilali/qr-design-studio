@@ -25,7 +25,7 @@ export function getPageMeta(pathname: string): PageMeta {
     return {
       title: "QR Templates | QR Design Studio",
       description:
-        "Browse ready-made QR templates for business, events, payments, WiFi, social profiles, and more.",
+        "Browse ready-made QR templates for business, events, menus, WiFi, social profiles, and more.",
     };
   }
 
@@ -40,7 +40,8 @@ export function getPageMeta(pathname: string): PageMeta {
   if (pathname.startsWith("/settings")) {
     return {
       title: "Settings | QR Design Studio",
-      description: "Manage account access and app preferences in QR Design Studio.",
+      description:
+        "Review local generation mode, export behavior, and app information for QR Design Studio.",
     };
   }
 

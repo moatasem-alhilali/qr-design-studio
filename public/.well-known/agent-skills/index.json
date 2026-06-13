@@ -1,0 +1,49 @@
+{
+  "version": "1.0",
+  "site": {
+    "name": "QR Design Studio",
+    "url": "https://qr-design-dun.vercel.app",
+    "description": "Static QR and barcode design studio with templates, frames, scan reliability guidance, and local browser exports."
+  },
+  "safety": {
+    "autonomousTransactionsAllowed": false,
+    "formSubmissionAllowed": false,
+    "privateDataAccessAllowed": false,
+    "fileUploadOrExportAllowed": false,
+    "notes": [
+      "Agents may inspect public pages and discovery documents.",
+      "Agents must not upload logos, import CSV files, export files, clear rows, or mutate the current design unless the user explicitly asks and confirms in the visible UI.",
+      "No OAuth flows, remote MCP transport, public executable API, checkout, payment, Firebase dashboard, or analytics API is exposed by this build."
+    ]
+  },
+  "skills": [
+    {
+      "id": "public-feature-discovery",
+      "title": "Public feature discovery",
+      "description": "Find and summarize the public QR/barcode design features available in the visible app.",
+      "document": "https://qr-design-dun.vercel.app/.well-known/agent-skills/public-feature-discovery.md",
+      "safeForAutonomousUse": true
+    },
+    {
+      "id": "template-guidance",
+      "title": "Template guidance",
+      "description": "Help users choose public QR templates without applying them automatically.",
+      "document": "https://qr-design-dun.vercel.app/.well-known/agent-skills/template-guidance.md",
+      "safeForAutonomousUse": true
+    },
+    {
+      "id": "batch-guidance",
+      "title": "Batch generation guidance",
+      "description": "Explain the local batch QR workflow without reading, importing, or exporting user files automatically.",
+      "document": "https://qr-design-dun.vercel.app/.well-known/agent-skills/batch-guidance.md",
+      "safeForAutonomousUse": true
+    },
+    {
+      "id": "safe-export-navigation",
+      "title": "Safe export navigation",
+      "description": "Guide users through QR/barcode export options while leaving all downloads under explicit user control.",
+      "document": "https://qr-design-dun.vercel.app/.well-known/agent-skills/safe-export-navigation.md",
+      "safeForAutonomousUse": true
+    }
+  ]
+}

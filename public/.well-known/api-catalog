@@ -1,0 +1,67 @@
+{
+  "linkset": [
+    {
+      "anchor": "https://qr-design-dun.vercel.app/.well-known/api-catalog",
+      "item": [
+        {
+          "href": "https://qr-design-dun.vercel.app/",
+          "type": "text/html",
+          "title": "QR Design Studio public web app"
+        }
+      ],
+      "service-desc": [
+        {
+          "href": "https://qr-design-dun.vercel.app/openapi.json",
+          "type": "application/vnd.oai.openapi+json",
+          "title": "OpenAPI discovery document with no executable paths"
+        },
+        {
+          "href": "https://qr-design-dun.vercel.app/.well-known/mcp/server-card.json",
+          "type": "application/json",
+          "title": "MCP server card for HTTPS discovery-only capabilities"
+        }
+      ],
+      "service-doc": [
+        {
+          "href": "https://qr-design-dun.vercel.app/llms.txt",
+          "type": "text/plain",
+          "title": "LLM and agent guidance"
+        },
+        {
+          "href": "https://qr-design-dun.vercel.app/.well-known/agent-skills/index.json",
+          "type": "application/json",
+          "title": "Agent skills index"
+        },
+        {
+          "href": "https://qr-design-dun.vercel.app/sitemap.xml",
+          "type": "application/xml",
+          "title": "Public sitemap"
+        }
+      ],
+      "alternate": [
+        {
+          "href": "https://qr-design-dun.vercel.app/index.md",
+          "type": "text/markdown",
+          "title": "Home Markdown"
+        },
+        {
+          "href": "https://qr-design-dun.vercel.app/templates/index.md",
+          "type": "text/markdown",
+          "title": "Templates Markdown"
+        },
+        {
+          "href": "https://qr-design-dun.vercel.app/batch/index.md",
+          "type": "text/markdown",
+          "title": "Batch Generator Markdown"
+        },
+        {
+          "href": "https://qr-design-dun.vercel.app/settings/index.md",
+          "type": "text/markdown",
+          "title": "Settings Markdown"
+        }
+      ]
+    }
+  ],
+  "profile": "https://www.rfc-editor.org/info/rfc9727",
+  "note": "This catalog intentionally excludes private, auth, dashboard, upload, export, analytics, dynamic redirect, Firebase, checkout, payment, and mutation endpoints because they are not exposed as public APIs in this build."
+}
