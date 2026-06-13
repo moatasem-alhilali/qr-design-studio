@@ -71,6 +71,7 @@ QR Design Studio is a `Vite + React + TypeScript` application for building profe
 
 ## Integrations
 
+- `Laravel API` for privacy-friendly visit analytics through `VITE_API_URL`.
 - `Firebase Authentication` for sign-in, sign-up, Google auth, and password reset.
 - `Cloud Firestore` for saved QR codes, short links, and scan events.
 - `Firebase Storage SDK` is initialized for future use.
@@ -146,6 +147,8 @@ cp .env.example .env.local
 Then fill in:
 
 ```env
+VITE_API_URL=https://console.moatasem.dev
+
 VITE_FIREBASE_API_KEY=your-api-key
 VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
 VITE_FIREBASE_PROJECT_ID=your-project-id
@@ -179,6 +182,8 @@ VITE_FIREBASE_APP_ID=1:123456789:web:abcdef123456
 - Logo uploads are currently stored as browser data URLs, not Firebase Storage uploads.
 - `WiFi` and `vCard` support are intentionally lightweight in the current UI.
 - Scan location falls back to `Unknown` if `ipapi.co` is unavailable.
+- Visit analytics use anonymous visitor/session IDs after consent. QR content,
+  uploaded logos, exports, and private design payloads are not sent.
 
 ## Publisher
 

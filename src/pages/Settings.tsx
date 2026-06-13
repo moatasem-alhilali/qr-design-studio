@@ -13,7 +13,7 @@ export default function Settings() {
             <span className="text-sm text-foreground">Static QR and Barcode generation</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            This build focuses on local QR and barcode generation without Firebase, authentication, cloud sync, dynamic redirects, or analytics.
+            This build focuses on local QR and barcode generation without Firebase, authentication, cloud sync, or dynamic redirects. Anonymous visit analytics run only after consent.
           </p>
         </div>
 

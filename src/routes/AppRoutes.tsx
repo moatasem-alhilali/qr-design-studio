@@ -7,6 +7,7 @@ import Index from "@/pages/Index";
 import NotFound from "@/pages/NotFound";
 import Settings from "@/pages/Settings";
 import Templates from "@/pages/Templates";
+import { VisitorAnalyticsTracker } from "@/features/analytics";
 
 function withAppLayout(page: ReactNode) {
   return <AppLayout>{page}</AppLayout>;
@@ -15,6 +16,7 @@ function withAppLayout(page: ReactNode) {
 export function AppRoutes() {
   return (
     <BrowserRouter>
+      <VisitorAnalyticsTracker />
       <Routes>
         <Route path="/" element={withAppLayout(<Index />)} />
         <Route path="/templates" element={withAppLayout(<Templates />)} />

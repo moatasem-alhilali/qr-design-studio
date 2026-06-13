@@ -22,6 +22,7 @@ src/
   providers/                 app-level providers and QueryClient policy
   pages/                     route components; should stay thin
   features/
+    analytics/               consent, visitor/page-view tracking client
     designer/                QR/barcode editor state workflow
     batch/                   batch row state, CSV parsing, ZIP generation
     templates/               template catalog and apply-template navigation
@@ -102,13 +103,42 @@ feature, but keep reusable UI in `components/ui` or domain components under
 
 ## API Layer Rules
 
-There is currently no backend API wired into this app. When an API is added:
+This app is wired to one Laravel endpoint for privacy-friendly visit analytics:
+
+```txt
+POST {VITE_API_URL}/api/v1/qr-design-studio/analytics/track
+```
+
+The API base defaults to `https://console.moatasem.dev` and can be overridden
+with `VITE_API_URL`.
 
 - Create typed feature API functions under `features/<feature>/api`.
 - Use TanStack Query for client server-state.
 - Define cache keys and invalidation next to the feature.
 - Keep response validation at the feature boundary when payloads affect rendering.
 - Do not put raw `fetch` calls in pages.
+- Fire-and-forget analytics calls stay outside TanStack Query because they do
+  not affect rendered server state and must never block QR generation.
+- Analytics must never send QR content, uploaded logos, generated exports,
+  vCard/WiFi payloads, or private design data. Only route, session, referrer,
+  attribution, locale, viewport, and screen metadata are allowed.
+
+## Analytics Workflow
+
+Analytics lives in:
+
+- `features/analytics/services/analytics-identifiers.ts` for consent, visitor
+  IDs, and browser-session IDs.
+- `features/analytics/api/track-analytics.ts` for the typed Laravel API client.
+- `features/analytics/components/visitor-analytics-tracker.tsx` for React
+  Router page-view and page-leave tracking.
+- `features/analytics/components/analytics-consent.tsx` for the consent banner.
+
+The tracker is mounted once inside `src/routes/AppRoutes.tsx`, and the consent
+banner is mounted once in `src/providers/AppProviders.tsx`.
+
+Analytics failures are intentionally swallowed. Visitors should never see a
+network or backend error because analytics failed.
 
 ## Batch Workflow
 
@@ -159,9 +189,11 @@ public/*/index.md
 ```
 
 The OpenAPI file is intentionally empty because this build does not expose a
-public executable REST API. Do not add OAuth/OIDC, account, payment, Firebase,
-dynamic redirect, scan analytics, upload, or mutation claims unless those
-features are implemented in the code and exposed publicly.
+public executable REST API from the Vite app itself. The Laravel analytics API is
+an external backend integration and is documented in the backend Swagger output.
+Do not add OAuth/OIDC, account, payment, Firebase, dynamic redirect, scan
+analytics, upload, or mutation claims unless those features are implemented in
+the code and exposed publicly.
 
 `src/shared/agent-readiness/WebMcpTools.tsx` registers optional browser
 `navigator.modelContext` tools when a host environment provides that API. Those
