@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 
-import { createHighResQRCanvas, defaultConfig, QRConfig } from "@/lib/qr-engine";
+import { createHighResQRCanvas, defaultConfig, generateQRMatrix, QRConfig } from "@/lib/qr-engine";
+import { exportPrintSheet, type PrintSheetOptions } from "@/lib/qr-print-sheet";
 import type { BatchItem } from "@/lib/types";
 
 export function createBatchRow(data = "", label = ""): BatchItem {
@@ -44,9 +45,21 @@ function canvasToBlob(canvas: HTMLCanvasElement): Promise<Blob> {
   });
 }
 
+/**
+ * Builds the config for one row.
+ *
+ * `design` is the styling the user actually set up in the studio. Batch used to
+ * ignore it entirely and hard-code the defaults, so a carefully branded design
+ * silently produced five hundred plain purple codes.
+ */
+function configForRow(row: BatchItem, design?: QRConfig): QRConfig {
+  return { ...(design ?? defaultConfig), data: row.data };
+}
+
 export async function generateBatchZip(
   rows: BatchItem[],
   onRowUpdate: (id: string, updates: Partial<BatchItem>) => void,
+  design?: QRConfig,
 ): Promise<Blob> {
   const zip = new JSZip();
 
@@ -58,9 +71,8 @@ export async function generateBatchZip(
     }
 
     try {
-      const config: QRConfig = { ...defaultConfig, data: row.data };
       // Print-resolution bitmap, with any logo fully painted before encoding.
-      const canvas = await createHighResQRCanvas(config);
+      const canvas = await createHighResQRCanvas(configForRow(row, design));
       zip.file(filenameFor(row, index), await canvasToBlob(canvas));
       onRowUpdate(row.id, { status: "completed" });
     } catch {
@@ -69,6 +81,36 @@ export async function generateBatchZip(
   }
 
   return zip.generateAsync({ type: "blob" });
+}
+
+/** Every valid row imposed onto printable sheets, as one vector PDF. */
+export async function generateBatchPrintSheet(
+  rows: BatchItem[],
+  options: PrintSheetOptions,
+  design?: QRConfig,
+  filename = "qr-print-sheet.pdf",
+): Promise<{ pages: number; placed: number }> {
+  const items = rows
+    .filter((row) => row.data.trim())
+    .map((row) => ({ config: configForRow(row, design), caption: row.label }));
+
+  if (!items.length) throw new Error("No valid rows");
+
+  return exportPrintSheet({ items, options }, filename);
+}
+
+/** Cheap pre-flight so the UI can flag rows that will never encode. */
+export function findUnencodableRows(rows: BatchItem[], design?: QRConfig): string[] {
+  const broken: string[] = [];
+  for (const row of rows) {
+    if (!row.data.trim()) continue;
+    try {
+      generateQRMatrix(configForRow(row, design));
+    } catch {
+      broken.push(row.id);
+    }
+  }
+  return broken;
 }
 
 export function downloadBlob(blob: Blob, filename: string): void {
