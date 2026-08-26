@@ -80,6 +80,26 @@ function joinLines(lines: string[]): string {
   return lines.filter(Boolean).join("\r\n");
 }
 
+const NON_ASCII = /[^\x00-\x7F]/;
+
+/**
+ * vCard 3.0 predates a mandatory charset, so contact apps routinely fall back
+ * to Latin-1 and render an Arabic name as mojibake even when the bytes are
+ * valid UTF-8. Tagging the property tells the importer how to read it.
+ *
+ * Only non-ASCII values get the parameter, which keeps Latin cards byte for
+ * byte as they were and costs nothing in QR capacity.
+ */
+function charsetFor(value: string): string {
+  return NON_ASCII.test(value) ? ";CHARSET=UTF-8" : "";
+}
+
+/** Builds one vCard property line, escaped and charset-tagged as needed. */
+function vcardProp(name: string, value: string | undefined, params = ""): string {
+  if (!value) return "";
+  return `${name}${params}${charsetFor(value)}:${escapeIcal(value)}`;
+}
+
 function digitsOnly(value: string): string {
   return value.replace(/[^0-9]/g, "");
 }
@@ -162,13 +182,14 @@ export function formatQRPayload({ data, dataType, fields = {} }: PayloadInput): 
       return joinLines([
         "BEGIN:VCARD",
         "VERSION:3.0",
-        `N:${escapeIcal(family)};${escapeIcal(given)};;;`,
-        `FN:${escapeIcal(value)}`,
-        fields.vcardOrg ? `ORG:${escapeIcal(fields.vcardOrg)}` : "",
-        fields.vcardTitle ? `TITLE:${escapeIcal(fields.vcardTitle)}` : "",
+        `N${charsetFor(value)}:${escapeIcal(family)};${escapeIcal(given)};;;`,
+        vcardProp("FN", value),
+        vcardProp("ORG", fields.vcardOrg),
+        vcardProp("TITLE", fields.vcardTitle),
+        // Phone numbers are digits and "+", so they never need a charset.
         fields.vcardPhone ? `TEL;TYPE=CELL:${normalisePhone(fields.vcardPhone)}` : "",
-        fields.vcardEmail ? `EMAIL;TYPE=INTERNET:${escapeIcal(fields.vcardEmail)}` : "",
-        fields.vcardUrl ? `URL:${escapeIcal(fields.vcardUrl)}` : "",
+        vcardProp("EMAIL", fields.vcardEmail, ";TYPE=INTERNET"),
+        vcardProp("URL", fields.vcardUrl),
         "END:VCARD",
       ]);
     }

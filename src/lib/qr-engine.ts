@@ -3,6 +3,17 @@ import { jsPDF } from "jspdf";
 
 import { byteLength, defaultFields, formatQRPayload, type DataType, type QRFields } from "@/lib/qr-payloads";
 
+/*
+  qrcode-generator ships two byte encoders and selects the wrong one by default.
+  The default does `charCodeAt(i) & 0xff`, truncating every character to a
+  single byte — so "م" (U+0645) was encoded as 0x45, the letter "E". Any Arabic
+  content in any data type came out of a scanner as Latin gibberish.
+
+  The UTF-8 encoder is bundled in the same file; it simply is not the default.
+  Selecting it once here fixes every payload the studio produces.
+*/
+qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
+
 export type ModuleStyle = "square" | "rounded" | "dots" | "diamond" | "extra-rounded" | "tiny-squares" | "heart" | "star" | "triangle" | "bubble";
 export type CornerStyle = "square" | "rounded" | "circle" | "thick" | "minimal" | "decorative" | "ring" | "leaf" | "frame-dots";
 export type ColorMode = "single" | "gradient";

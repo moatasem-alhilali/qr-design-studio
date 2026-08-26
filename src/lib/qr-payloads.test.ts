@@ -136,6 +136,28 @@ describe("calendar event", () => {
   });
 });
 
+describe("arabic contact cards", () => {
+  it("tags non-ASCII properties with CHARSET so contact apps stop showing mojibake", () => {
+    const payload = formatQRPayload({
+      data: "معتصم الهلالي",
+      dataType: "vcard",
+      fields: { vcardOrg: "استوديو", vcardEmail: "hi@example.com" },
+    });
+
+    expect(payload).toContain("FN;CHARSET=UTF-8:معتصم الهلالي");
+    expect(payload).toContain("N;CHARSET=UTF-8:الهلالي;معتصم;;;");
+    expect(payload).toContain("ORG;CHARSET=UTF-8:استوديو");
+    // An ASCII value stays exactly as it was — no needless bytes.
+    expect(payload).toContain("EMAIL;TYPE=INTERNET:hi@example.com");
+  });
+
+  it("leaves a fully Latin card untouched", () => {
+    const payload = formatQRPayload({ data: "Sara Ali", dataType: "vcard", fields: { vcardOrg: "Acme" } });
+    expect(payload).not.toContain("CHARSET");
+    expect(payload).toContain("FN:Sara Ali");
+  });
+});
+
 describe("byteLength", () => {
   it("counts UTF-8 bytes, which is what QR capacity is measured in", () => {
     expect(byteLength("abc")).toBe(3);
