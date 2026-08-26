@@ -1,14 +1,24 @@
 import qrcode from "qrcode-generator";
 import { jsPDF } from "jspdf";
 
+import { byteLength, defaultFields, formatQRPayload, type DataType, type QRFields } from "@/lib/qr-payloads";
+
 export type ModuleStyle = "square" | "rounded" | "dots" | "diamond" | "extra-rounded" | "tiny-squares" | "heart" | "star" | "triangle" | "bubble";
 export type CornerStyle = "square" | "rounded" | "circle" | "thick" | "minimal" | "decorative" | "ring" | "leaf" | "frame-dots";
 export type ColorMode = "single" | "gradient";
-export type DataType = "url" | "wifi" | "email" | "phone" | "text" | "whatsapp" | "vcard";
+export type { DataType, QRFields };
 
 export interface QRConfig {
   data: string;
   dataType: DataType;
+  /** Extra values for the structured data types. See `qr-payloads`. */
+  fields: QRFields;
+  /**
+   * Blank margin around the symbol, in modules. The QR specification requires
+   * four; without it a code placed on a coloured or busy background loses its
+   * boundary and scanners struggle to find the finder patterns.
+   */
+  quietZone: number;
   moduleStyle: ModuleStyle;
   cornerStyle: CornerStyle;
   colorMode: ColorMode;
@@ -26,6 +36,8 @@ export interface QRConfig {
 export const defaultConfig: QRConfig = {
   data: "https://qrcode.moatasem.dev/",
   dataType: "url",
+  fields: { ...defaultFields },
+  quietZone: 4,
   moduleStyle: "rounded",
   cornerStyle: "rounded",
   colorMode: "single",
@@ -52,22 +64,31 @@ const MAX_PREVIEW_CANVAS_PX = 1600;
 const MAX_EXPORT_CANVAS_PX = 8192;
 const TARGET_EXPORT_PX = 2400;
 
+const FALLBACK_DATA = "https://qrcode.moatasem.dev/";
+
 function formatData(config: QRConfig): string {
-  const { data, dataType } = config;
-  if (!data) return "https://qrcode.moatasem.dev/";
-  switch (dataType) {
-    case "wifi":
-      return `WIFI:T:WPA;S:${data};P:password;;`;
-    case "email":
-      return `mailto:${data}`;
-    case "phone":
-      return `tel:${data}`;
-    case "whatsapp":
-      return `https://wa.me/${data.replace(/[^0-9]/g, "")}`;
-    case "vcard":
-      return `BEGIN:VCARD\nVERSION:3.0\nFN:${data}\nEND:VCARD`;
-    default:
-      return data;
+  if (!config.data.trim()) return FALLBACK_DATA;
+  return formatQRPayload({ data: config.data, dataType: config.dataType, fields: config.fields });
+}
+
+/** The exact string that gets encoded — used by the verifier and the readouts. */
+export function getEncodedPayload(config: QRConfig): string {
+  return formatData(config);
+}
+
+/**
+ * Raised when the payload cannot fit in any QR version at the chosen error
+ * correction level. The engine used to let this surface as a bare throw that
+ * every caller swallowed, so the preview silently kept displaying the previous
+ * code and users exported a file containing the wrong data.
+ */
+export class QRCapacityError extends Error {
+  readonly bytes: number;
+
+  constructor(bytes: number) {
+    super(`Payload of ${bytes} bytes exceeds QR capacity`);
+    this.name = "QRCapacityError";
+    this.bytes = bytes;
   }
 }
 
@@ -82,8 +103,13 @@ export function generateQRMatrix(config: QRConfig): QRMatrix {
   const qr = qrcode(0, ecl);
 
   const formattedData = formatData(config);
-  qr.addData(formattedData);
-  qr.make();
+  try {
+    qr.addData(formattedData);
+    qr.make();
+  } catch {
+    // qrcode-generator throws a bare string when nothing can hold the payload.
+    throw new QRCapacityError(byteLength(formattedData));
+  }
 
   const moduleCount = qr.getModuleCount();
   const modules: boolean[][] = [];
@@ -108,6 +134,27 @@ export function getQRPixelMetrics(moduleCount: number, logicalSize: number, pixe
   const target = Math.max(1, logicalSize) * Math.max(1, pixelRatio);
   const cellSize = Math.max(1, Math.round(target / Math.max(1, moduleCount)));
   return { cellSize, canvasSize: cellSize * moduleCount };
+}
+
+export interface QRLayout extends QRPixelMetrics {
+  /** Quiet-zone width in modules. */
+  quietZone: number;
+  /** Modules across the whole bitmap, symbol plus both margins. */
+  modulesAcross: number;
+  /** Pixel offset of the symbol's top-left module. */
+  origin: number;
+}
+
+/**
+ * Single source of truth for how a symbol maps onto pixels. Everything that
+ * draws or measures a QR goes through this so the canvas, the SVG and the
+ * readouts cannot drift apart.
+ */
+export function getQRLayout(moduleCount: number, config: QRConfig, pixelRatio: number): QRLayout {
+  const quietZone = Math.max(0, Math.round(config.quietZone ?? 0));
+  const modulesAcross = moduleCount + quietZone * 2;
+  const { cellSize, canvasSize } = getQRPixelMetrics(modulesAcross, config.size, pixelRatio);
+  return { quietZone, modulesAcross, cellSize, canvasSize, origin: quietZone * cellSize };
 }
 
 export function getPreviewPixelRatio(logicalSize: number): number {
@@ -216,7 +263,7 @@ export function renderQRToCanvas(
 
   const { size: moduleCount, modules } = matrix;
   const pixelRatio = options.pixelRatio ?? getPreviewPixelRatio(config.size);
-  const { cellSize, canvasSize } = getQRPixelMetrics(moduleCount, config.size, pixelRatio);
+  const { cellSize, canvasSize, origin } = getQRLayout(moduleCount, config, pixelRatio);
 
   canvas.width = canvasSize;
   canvas.height = canvasSize;
@@ -256,8 +303,8 @@ export function renderQRToCanvas(
     for (let col = 0; col < moduleCount; col++) {
       if (!modules[row][col]) continue;
 
-      const x = col * cellSize;
-      const y = row * cellSize;
+      const x = origin + col * cellSize;
+      const y = origin + row * cellSize;
 
       if (isFinderPattern(row, col, moduleCount)) {
         drawFinderModule(ctx, x, y, cellSize, row, col, moduleCount, config, fillStyle);
@@ -624,7 +671,11 @@ export function exportCanvasAsPDF(
 
 export function exportCanvasAsSVG(matrix: QRMatrix, config: QRConfig): string {
   const { size: moduleCount, modules } = matrix;
-  const cellSize = config.size / moduleCount;
+  // Vector output is not on a pixel grid, so the cell keeps full precision and
+  // the symbol plus its quiet zone lands exactly on the stated viewBox.
+  const quietZone = Math.max(0, Math.round(config.quietZone ?? 0));
+  const cellSize = config.size / (moduleCount + quietZone * 2);
+  const origin = quietZone * cellSize;
   let svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${config.size} ${config.size}" width="${config.size}" height="${config.size}">`;
 
   if (!config.transparentBg) {
@@ -650,11 +701,18 @@ export function exportCanvasAsSVG(matrix: QRMatrix, config: QRConfig): string {
   for (let row = 0; row < moduleCount; row++) {
     for (let col = 0; col < moduleCount; col++) {
       if (!modules[row][col]) continue;
-      const x = col * cellSize;
-      const y = row * cellSize;
+      const x = origin + col * cellSize;
+      const y = origin + row * cellSize;
       const gap = cellSize * 0.1;
       const s = cellSize - gap;
       const offset = gap / 2;
+
+      // Finder patterns follow the corner style, exactly as the canvas does.
+      // Skipping this is what made SVG exports look different from the PNG.
+      if (isFinderPattern(row, col, moduleCount)) {
+        svg += svgFinderModule(x, y, cellSize, row, col, moduleCount, config, fill);
+        continue;
+      }
 
       switch (config.moduleStyle) {
         case "dots":
@@ -694,6 +752,7 @@ export function exportCanvasAsSVG(matrix: QRMatrix, config: QRConfig): string {
   }
 
   if (config.logoUrl) {
+    // Measured against the full sheet, matching how the canvas sizes it.
     const logoSize = config.size * config.logoScale;
     const logoX = (config.size - logoSize) / 2;
     const logoY = (config.size - logoSize) / 2;
@@ -723,6 +782,67 @@ export function downloadSVG(svgString: string, filename = "qrcode.svg"): void {
   link.href = URL.createObjectURL(blob);
   link.click();
   URL.revokeObjectURL(link.href);
+}
+
+/**
+ * Vector twin of `drawFinderModule`. Kept deliberately parallel to it — the two
+ * must agree module for module or SVG and PNG exports of the same design stop
+ * looking like the same design.
+ */
+function svgFinderModule(
+  x: number,
+  y: number,
+  cellSize: number,
+  row: number,
+  col: number,
+  moduleCount: number,
+  config: QRConfig,
+  fill: string,
+): string {
+  const gap = cellSize * 0.05;
+  const s = cellSize - gap;
+  const offset = gap / 2;
+  const cx = x + cellSize / 2;
+  const cy = y + cellSize / 2;
+  const inner = isFinderPatternInner(row, col, moduleCount);
+  const outer = isFinderPatternOuter(row, col, moduleCount);
+
+  const box = (rx: number, pad = offset, side = s) =>
+    `<rect x="${x + pad}" y="${y + pad}" width="${side}" height="${side}" rx="${rx}" fill="${fill}"/>`;
+  const disc = (r: number) => `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}"/>`;
+  const solid = () => `<rect x="${x}" y="${y}" width="${cellSize}" height="${cellSize}" fill="${fill}"/>`;
+
+  switch (config.cornerStyle) {
+    case "circle":
+      return inner ? disc(s / 2.2) : solid();
+    case "rounded":
+      return box(s * 0.35);
+    case "thick":
+      return solid();
+    case "minimal":
+      return `<rect x="${x + offset * 2}" y="${y + offset * 2}" width="${s - offset * 2}" height="${s - offset * 2}" rx="${s * 0.2}" fill="${fill}"/>`;
+    case "decorative":
+      return inner ? disc(s / 2) : box(s * 0.25);
+    case "ring":
+      if (inner) return disc(s / 2.5);
+      return outer ? box(s * 0.14) : "";
+    case "leaf":
+      if (inner) {
+        const d = [
+          `M ${cx} ${y + offset}`,
+          `Q ${x + cellSize * 0.92} ${cy} ${cx} ${y + cellSize - offset}`,
+          `Q ${x + cellSize * 0.08} ${cy} ${cx} ${y + offset}`,
+          "Z",
+        ].join(" ");
+        return `<path d="${d}" fill="${fill}"/>`;
+      }
+      return box(s * 0.28);
+    case "frame-dots":
+      if (inner) return disc(s / 2.1);
+      return outer ? disc(s / 3.1) : "";
+    default:
+      return solid();
+  }
 }
 
 function svgStar(cx: number, cy: number, outerRadius: number, innerRadius: number, fill: string) {
