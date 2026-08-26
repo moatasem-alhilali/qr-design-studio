@@ -1,14 +1,19 @@
-import { useState, useRef, type ChangeEvent } from 'react';
+import { useEffect, useState, useRef, type ChangeEvent } from 'react';
 import { toast } from 'sonner';
-import { Upload, Plus, Trash2, Download, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { Upload, Plus, Trash2, Download, CheckCircle, AlertCircle, Loader2, Printer } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import type { QRConfig } from '@/lib/qr-engine';
+import { defaultPrintSheetOptions } from '@/lib/qr-print-sheet';
 import { Sheet } from '@/components/workshop/Sheet';
 import { Stamp } from '@/components/workshop/Stamp';
+import { Tool } from '@/components/workshop/Tool';
 import { ColourBar } from '@/components/workshop/InkWell';
 import { useBatchRows } from '@/features/batch/hooks/useBatchRows';
+import { loadDesignLocally } from '@/features/designer/services/design-file';
 import {
   downloadBlob,
+  generateBatchPrintSheet,
   generateBatchZip,
   parseCsvRows,
   parsePastedRows,
@@ -19,7 +24,22 @@ export default function BatchPage() {
   const { t } = useI18n();
   const { rows, validRows, addRow, addRows, updateRow, removeRow, clearRows } = useBatchRows();
   const [generating, setGenerating] = useState(false);
+  const [sheeting, setSheeting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  /*
+    Batch used to hard-code the default styling, so a branded design produced
+    hundreds of plain codes. It now picks up whatever was last designed in the
+    studio, and you can still opt back out to the plain default.
+  */
+  const [savedDesign, setSavedDesign] = useState<QRConfig | null>(null);
+  const [useSavedDesign, setUseSavedDesign] = useState(true);
+
+  useEffect(() => {
+    setSavedDesign(loadDesignLocally()?.config ?? null);
+  }, []);
+
+  const activeDesign = useSavedDesign ? savedDesign ?? undefined : undefined;
 
   const handleCSVUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -45,13 +65,26 @@ export default function BatchPage() {
     if (rows.length === 0) { toast.error(t.batch.addSomeData); return; }
     setGenerating(true);
     try {
-      const zipBlob = await generateBatchZip(rows, updateRow);
+      const zipBlob = await generateBatchZip(rows, updateRow, activeDesign);
       downloadBlob(zipBlob, 'qr-codes-batch.zip');
       toast.success(t.batch.batchSuccess);
     } catch {
       toast.error(t.batch.batchFailed);
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const exportSheet = async () => {
+    if (validRows.length === 0) { toast.error(t.batch.addSomeData); return; }
+    setSheeting(true);
+    try {
+      const result = await generateBatchPrintSheet(rows, defaultPrintSheetOptions, activeDesign);
+      toast.success(`${t.home.sheetDone} — ${result.placed} / ${result.pages}`);
+    } catch {
+      toast.error(t.home.sheetTooSmall);
+    } finally {
+      setSheeting(false);
     }
   };
 
@@ -77,6 +110,20 @@ export default function BatchPage() {
             <input ref={fileRef} type="file" accept=".csv,.txt" onChange={handleCSVUpload} className="hidden" />
             <p className="font-mono text-[11px] text-ink-faint">{t.batch.csvFormat}</p>
           </div>
+
+          {savedDesign && (
+            <div className="sheet-sunk space-y-2 p-3">
+              <p className="spec">{t.home.jobTicket}</p>
+              <div className="grid grid-cols-2 gap-2">
+                <Tool wide on={useSavedDesign} onClick={() => setUseSavedDesign(true)}>
+                  {t.batch.useMyDesign}
+                </Tool>
+                <Tool wide on={!useSavedDesign} onClick={() => setUseSavedDesign(false)}>
+                  {t.batch.usePlain}
+                </Tool>
+              </div>
+            </div>
+          )}
 
           <div className="space-y-2">
             <label className="spec block" htmlFor="batch-paste">{t.batch.quickPaste}</label>
@@ -154,6 +201,10 @@ export default function BatchPage() {
                 {t.batch.clearAll}
               </button>
             )}
+            <Stamp onClick={exportSheet} disabled={sheeting || validRows.length === 0}>
+              {sheeting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Printer className="h-3.5 w-3.5" />}
+              {t.home.printSheet}
+            </Stamp>
             <Stamp solid onClick={generateAll} disabled={generating || validRows.length === 0}>
               {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
               {generating ? t.batch.generating : `${t.batch.generate} ${validRows.length}`}

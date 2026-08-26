@@ -131,7 +131,18 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
             unit="°"
           />
         )}
+        <Dial
+          value={config.quietZone}
+          min={0}
+          max={8}
+          step={1}
+          onChange={(quietZone) => onChange({ quietZone })}
+          label={t.qrControls.quietZone}
+          size={84}
+        />
       </div>
+
+      <p className="text-center text-[11px] leading-snug text-ink-faint">{t.qrControls.quietZoneHint}</p>
 
       {/* Error correction: how much of the plate can be damaged and still read. */}
       <div className="space-y-2">

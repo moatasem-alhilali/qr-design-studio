@@ -1,4 +1,4 @@
-import { Barcode, Layers3, Palette, QrCode, ShieldCheck, Sparkles, SquareDashed, Type } from "lucide-react";
+import { Barcode, Layers3, Palette, QrCode, Redo2, ShieldCheck, Sparkles, SquareDashed, Ticket, Type, Undo2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 import { QRPreview } from "@/components/qr/QRPreview";
@@ -12,6 +12,7 @@ import { BarcodeDataInput } from "@/components/barcode/BarcodeDataInput";
 import { BarcodeStyleControls } from "@/components/barcode/BarcodeStyleControls";
 import { BarcodePresetPanel } from "@/components/barcode/BarcodePresetPanel";
 import { BarcodeReliabilityPanel } from "@/components/barcode/BarcodeReliabilityPanel";
+import { JobTicketPanel } from "@/components/qr/JobTicketPanel";
 import { BenchDrawer } from "@/components/workshop/BenchDrawer";
 import { Tool } from "@/components/workshop/Tool";
 import { useDesignerState, type DesignType } from "@/features/designer/hooks/useDesignerState";
@@ -30,6 +31,11 @@ const Index = () => {
     handleFullChange,
     handleBarcodeChange,
     handleFullBarcodeChange,
+    replaceDesign,
+    undo,
+    redo,
+    canUndo,
+    canRedo,
   } = useDesignerState();
 
   const isQR = designType === "qr";
@@ -79,7 +85,17 @@ const Index = () => {
         >
           {/* Which machine is loaded. Always visible — never behind a drawer. */}
           <div className="sheet-sunk m-3 mb-0 p-3">
-            <p className="spec mb-2">{t.home.generator}</p>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="spec">{t.home.generator}</p>
+              <div className="flex items-center gap-1.5">
+                <Tool onClick={undo} disabled={!canUndo} aria-label={t.home.undo} title={`${t.home.undo} (Ctrl+Z)`} className="px-2 py-1.5">
+                  <Undo2 className="h-3.5 w-3.5" />
+                </Tool>
+                <Tool onClick={redo} disabled={!canRedo} aria-label={t.home.redo} title={`${t.home.redo} (Ctrl+Shift+Z)`} className="px-2 py-1.5">
+                  <Redo2 className="h-3.5 w-3.5" />
+                </Tool>
+              </div>
+            </div>
             <div className="grid grid-cols-2 gap-2">
               {generators.map(({ value, label, icon: Icon, hint }) => (
                 <Tool
@@ -147,6 +163,12 @@ const Index = () => {
                 <BarcodeReliabilityPanel config={barcodeConfig} />
               )}
             </BenchDrawer>
+
+            {isQR && (
+              <BenchDrawer title={t.home.jobTicket} icon={<Ticket className="h-3 w-3" />} tape="magenta">
+                <JobTicketPanel config={config} frame={frameConfig} onLoad={replaceDesign} />
+              </BenchDrawer>
+            )}
           </div>
 
           <p className="flex items-center gap-2 px-4 py-4 text-[11px] leading-snug text-ink-faint">

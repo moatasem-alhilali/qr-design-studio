@@ -473,6 +473,8 @@ const translations = {
       batchSuccess: "Batch generated and downloaded!",
       importedRows: "Imported",
       rows: "rows",
+      useMyDesign: "My saved design",
+      usePlain: "Plain default",
     },
     settings: {
       title: "Settings",
@@ -794,6 +796,8 @@ const translations = {
       batchSuccess: "تم إنشاء الدفعة وتنزيلها",
       importedRows: "تم استيراد",
       rows: "صفوف",
+      useMyDesign: "تصميمي المحفوظ",
+      usePlain: "الشكل الافتراضي",
     },
     settings: {
       title: "الإعدادات",

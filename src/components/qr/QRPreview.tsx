@@ -1,8 +1,9 @@
 import { useEffect, useRef, useCallback, useState } from "react";
-import { FileImage, FileText, FileCode2 } from "lucide-react";
+import { AlertTriangle, FileImage, FileText, FileCode2, Printer } from "lucide-react";
 
 import {
   QRConfig,
+  QRCapacityError,
   generateQRMatrix,
   renderQRToCanvas,
   createHighResQRCanvas,
@@ -11,13 +12,16 @@ import {
   exportCanvasAsSVG,
   downloadSVG,
   getExportPixelRatio,
-  getQRPixelMetrics,
+  getQRLayout,
+  type QRMatrix,
 } from "@/lib/qr-engine";
+import { exportQRAsVectorPDF } from "@/lib/qr-vector-pdf";
 import { FrameConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Sheet } from "@/components/workshop/Sheet";
 import { Stamp } from "@/components/workshop/Stamp";
 import { ColourBar } from "@/components/workshop/InkWell";
+import { PrintSheetPanel } from "@/components/qr/PrintSheetPanel";
 import { exportFramedSvg, getFrameMetrics, getTypography, renderFramedCanvas, scaleFrameConfig, withAlpha } from "@/components/code/frame-utils";
 import { useI18n } from "@/shared/i18n/i18n";
 
@@ -29,13 +33,19 @@ interface QRPreviewProps {
 export function QRPreview({ config, frame }: QRPreviewProps) {
   const { t } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const matrixRef = useRef<ReturnType<typeof generateQRMatrix> | null>(null);
+  const matrixRef = useRef<QRMatrix | null>(null);
   const [proof, setProof] = useState({ px: config.size, modules: 0 });
+  const [overflowBytes, setOverflowBytes] = useState<number | null>(null);
   const [isExporting, setIsExporting] = useState(false);
+  const [showPrintSheet, setShowPrintSheet] = useState(false);
+
   const hasFrame = Boolean(frame && frame.type !== "none");
   const frameMetrics = hasFrame && frame ? getFrameMetrics(frame, config.size, config.size) : null;
   const typography = hasFrame && frame ? getTypography(frame) : null;
   const isScannerFrame = frame?.type === "scanner";
+  // Frame furniture carries text, and jsPDF's core fonts cannot set Arabic, so
+  // framed exports stay raster while a bare symbol goes out as true vector.
+  const pdfIsVector = !hasFrame;
 
   const render = useCallback(() => {
     if (!canvasRef.current) return;
@@ -44,11 +54,18 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
       matrixRef.current = matrix;
       renderQRToCanvas(canvasRef.current, matrix, config);
       setProof({
-        px: getQRPixelMetrics(matrix.size, config.size, getExportPixelRatio(config.size)).canvasSize,
+        px: getQRLayout(matrix.size, config, getExportPixelRatio(config.size)).canvasSize,
         modules: matrix.size,
       });
-    } catch {
-      // invalid data, ignore
+      setOverflowBytes(null);
+    } catch (cause) {
+      /*
+        Surfacing this is the whole point. The old code swallowed it, so the
+        canvas kept showing the previous design and the readout kept describing
+        it — users exported a file that encoded content they had replaced.
+      */
+      setOverflowBytes(cause instanceof QRCapacityError ? cause.bytes : -1);
+      matrixRef.current = null;
     }
   }, [config]);
 
@@ -58,8 +75,7 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
   }, [render, hasFrame, frame?.type]);
 
   /**
-   * Every raster export goes through here so the bitmap is rendered fresh at
-   * print resolution *and* the logo bitmap is guaranteed to be decoded and
+   * Raster exports render fresh at print resolution, with the logo decoded and
    * painted before the file is written.
    */
   const buildExportCanvas = useCallback(async () => {
@@ -82,29 +98,35 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
   }, [config, frame, hasFrame]);
 
   const runExport = useCallback(
-    async (write: (result: Awaited<ReturnType<typeof buildExportCanvas>>) => void) => {
-      if (isExporting) return;
+    async (task: () => Promise<void>) => {
+      if (isExporting || overflowBytes !== null) return;
       setIsExporting(true);
       try {
-        write(await buildExportCanvas());
+        await task();
       } catch {
-        // invalid data or a broken logo; nothing to download
+        // Nothing to download; the error banner already explains why.
       } finally {
         setIsExporting(false);
       }
     },
-    [buildExportCanvas, isExporting],
+    [isExporting, overflowBytes],
   );
 
-  const handleDownloadPNG = () => {
-    void runExport(({ canvas }) => exportCanvasAsPNG(canvas, "qrcode.png"));
-  };
+  const handleDownloadPNG = () =>
+    void runExport(async () => {
+      const { canvas } = await buildExportCanvas();
+      exportCanvasAsPNG(canvas, "qrcode.png");
+    });
 
-  const handleDownloadPDF = () => {
-    void runExport(({ canvas, logicalWidth, logicalHeight }) =>
-      exportCanvasAsPDF(canvas, "qrcode.pdf", { logicalWidth, logicalHeight }),
-    );
-  };
+  const handleDownloadPDF = () =>
+    void runExport(async () => {
+      if (pdfIsVector && matrixRef.current) {
+        await exportQRAsVectorPDF(matrixRef.current, config, "qrcode.pdf");
+        return;
+      }
+      const { canvas, logicalWidth, logicalHeight } = await buildExportCanvas();
+      exportCanvasAsPDF(canvas, "qrcode.pdf", { logicalWidth, logicalHeight });
+    });
 
   const handleDownloadSVG = () => {
     if (!matrixRef.current) return;
@@ -114,8 +136,8 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
     downloadSVG(svg, "qrcode.svg");
   };
 
-  // The proof is a sheet of stock pasted onto the bench: its own contact
-  // shadow, its own slight rotation.
+  const blocked = overflowBytes !== null;
+
   const proofSurface = {
     backgroundColor: config.transparentBg ? "transparent" : config.bgColor,
     boxShadow:
@@ -127,7 +149,7 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
   return (
     <Sheet marks label={t.home.onPress} className="overflow-hidden">
       <div className="px-4 pb-5 pt-8 sm:px-8 sm:pb-7 sm:pt-10">
-        <div className="flex min-h-[300px] items-center justify-center py-4">
+        <div className={cn("flex min-h-[300px] items-center justify-center py-4", blocked && "opacity-40")}>
           {hasFrame && frame && frameMetrics && typography ? (
             <div
               className="askew-1 w-fit"
@@ -212,42 +234,70 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
           )}
         </div>
 
-        {/* Press readout: what will actually come off the machine. */}
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-mono text-[11px] text-ink-faint">
-          <span className="text-ink-mid">{t.home.proof}</span>
-          <span aria-hidden>·</span>
-          <span className="tabular-nums">{config.size}px</span>
-          <span aria-hidden>→</span>
-          <span className="tabular-nums font-semibold text-ink">{proof.px}×{proof.px}px</span>
-          <span aria-hidden>·</span>
-          <span className="tabular-nums">{proof.modules}×{proof.modules}</span>
-          <span aria-hidden>·</span>
-          <span>
-            {t.qrControls.errorCorrectionShort}&nbsp;{config.logoUrl ? "H" : config.errorCorrection}
-          </span>
-        </div>
+        {blocked ? (
+          <div
+            role="alert"
+            className="mt-2 flex items-start gap-3 rounded-[3px] p-3"
+            style={{ background: "hsl(var(--destructive) / 0.12)", boxShadow: "0 0 0 2px hsl(var(--destructive) / 0.4) inset" }}
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+            <div className="min-w-0 text-xs leading-snug">
+              <p className="font-semibold text-ink">{t.home.tooLongTitle}</p>
+              <p className="mt-0.5 text-ink-mid">
+                {t.home.tooLongBody.replace("{bytes}", overflowBytes > 0 ? String(overflowBytes) : "—")}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 font-mono text-[11px] text-ink-faint">
+            <span className="text-ink-mid">{t.home.proof}</span>
+            <span aria-hidden>·</span>
+            <span className="tabular-nums">{config.size}px</span>
+            <span aria-hidden>→</span>
+            <span className="tabular-nums font-semibold text-ink">{proof.px}×{proof.px}px</span>
+            <span aria-hidden>·</span>
+            <span className="tabular-nums">{proof.modules}×{proof.modules}</span>
+            <span aria-hidden>·</span>
+            <span>
+              {t.qrControls.errorCorrectionShort}&nbsp;{config.logoUrl ? "H" : config.errorCorrection}
+            </span>
+          </div>
+        )}
       </div>
 
       <hr className="perf" />
 
-      {/* The stamp rack. */}
       <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-8">
         <span className="spec">{t.home.pullProof}</span>
         <div className={cn("flex flex-wrap items-center gap-3", isExporting && "opacity-70")}>
-          <Stamp onClick={handleDownloadPNG} disabled={isExporting}>
+          <Stamp onClick={handleDownloadPNG} disabled={isExporting || blocked}>
             <FileImage className="h-3.5 w-3.5" />
             PNG
           </Stamp>
-          <Stamp onClick={handleDownloadPDF} disabled={isExporting} solid>
+          <Stamp onClick={handleDownloadPDF} disabled={isExporting || blocked} solid>
             <FileText className="h-3.5 w-3.5" />
             PDF
+            <span className="font-normal opacity-70">
+              {pdfIsVector ? t.home.vector : t.home.raster}
+            </span>
           </Stamp>
-          <Stamp onClick={handleDownloadSVG}>
+          <Stamp onClick={handleDownloadSVG} disabled={blocked}>
             <FileCode2 className="h-3.5 w-3.5" />
             SVG
           </Stamp>
+          <Stamp onClick={() => setShowPrintSheet((open) => !open)} disabled={blocked}>
+            <Printer className="h-3.5 w-3.5" />
+            {t.home.printSheet}
+          </Stamp>
         </div>
       </div>
+
+      {showPrintSheet && !blocked && (
+        <>
+          <hr className="perf" />
+          <PrintSheetPanel config={config} />
+        </>
+      )}
 
       <ColourBar />
     </Sheet>
