@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback, useState } from "react";
-import { AlertTriangle, FileImage, FileText, FileCode2, Printer } from "lucide-react";
+import { AlertTriangle, Download, FileImage, FileText, FileCode2, Printer } from "lucide-react";
 
 import {
   QRConfig,
@@ -268,7 +268,10 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
       <hr className="perf" />
 
       <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-8">
-        <span className="spec">{t.home.pullProof}</span>
+        <span className="spec flex items-center gap-1.5">
+          <Download className="h-3.5 w-3.5" aria-hidden />
+          {t.home.download}
+        </span>
         <div className={cn("flex flex-wrap items-center gap-3", isExporting && "opacity-70")}>
           <Stamp onClick={handleDownloadPNG} disabled={isExporting || blocked}>
             <FileImage className="h-3.5 w-3.5" />

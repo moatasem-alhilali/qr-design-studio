@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { FileCode2, FileImage, FileText } from "lucide-react";
+import { Download, FileCode2, FileImage, FileText } from "lucide-react";
 
 import { BarcodeConfig, exportBarcodeAsSVG, generateBarcodeModel, renderBarcodeToCanvas } from "@/lib/barcode-engine";
 import { FrameConfig } from "@/lib/types";
@@ -209,7 +209,10 @@ export function BarcodePreview({ config, frame }: BarcodePreviewProps) {
       <hr className="perf" />
 
       <div className="flex flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-8">
-        <span className="spec">{t.home.pullProof}</span>
+        <span className="spec flex items-center gap-1.5">
+          <Download className="h-3.5 w-3.5" aria-hidden />
+          {t.home.download}
+        </span>
         <div className="flex flex-wrap items-center gap-3">
           <Stamp onClick={handleDownloadPNG}>
             <FileImage className="h-3.5 w-3.5" />

@@ -80,7 +80,12 @@ function joinLines(lines: string[]): string {
   return lines.filter(Boolean).join("\r\n");
 }
 
-const NON_ASCII = /[^\x00-\x7F]/;
+function hasNonAscii(value: string): boolean {
+  for (let i = 0; i < value.length; i += 1) {
+    if (value.charCodeAt(i) > 127) return true;
+  }
+  return false;
+}
 
 /**
  * vCard 3.0 predates a mandatory charset, so contact apps routinely fall back
@@ -91,7 +96,7 @@ const NON_ASCII = /[^\x00-\x7F]/;
  * byte as they were and costs nothing in QR capacity.
  */
 function charsetFor(value: string): string {
-  return NON_ASCII.test(value) ? ";CHARSET=UTF-8" : "";
+  return hasNonAscii(value) ? ";CHARSET=UTF-8" : "";
 }
 
 /** Builds one vCard property line, escaped and charset-tagged as needed. */

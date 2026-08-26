@@ -4,15 +4,20 @@ import { jsPDF } from "jspdf";
 import { byteLength, defaultFields, formatQRPayload, type DataType, type QRFields } from "@/lib/qr-payloads";
 
 /*
-  qrcode-generator ships two byte encoders and selects the wrong one by default.
-  The default does `charCodeAt(i) & 0xff`, truncating every character to a
-  single byte — so "م" (U+0645) was encoded as 0x45, the letter "E". Any Arabic
-  content in any data type came out of a scanner as Latin gibberish.
+  qrcode-generator encodes byte mode with `charCodeAt(i) & 0xff`, truncating
+  every character to a single byte — so "م" (U+0645) went in as 0x45, the
+  letter "E". Any Arabic content, in any data type, came back out of a scanner
+  as Latin gibberish.
 
-  The UTF-8 encoder is bundled in the same file; it simply is not the default.
-  Selecting it once here fixes every payload the studio produces.
+  The CommonJS build at least offers a UTF-8 encoder under
+  `stringToBytesFuncs`; the ESM build that bundlers actually resolve does not
+  ship one at all, so we install our own. TextEncoder is the right tool: it is
+  native, and it handles surrogate pairs (emoji) correctly.
+
+  The library reads this property at call time, so replacing it here covers
+  every code the studio generates.
 */
-qrcode.stringToBytes = qrcode.stringToBytesFuncs["UTF-8"];
+qrcode.stringToBytes = (value: string) => Array.from(new TextEncoder().encode(value));
 
 export type ModuleStyle = "square" | "rounded" | "dots" | "diamond" | "extra-rounded" | "tiny-squares" | "heart" | "star" | "triangle" | "bubble";
 export type CornerStyle = "square" | "rounded" | "circle" | "thick" | "minimal" | "decorative" | "ring" | "leaf" | "frame-dots";
