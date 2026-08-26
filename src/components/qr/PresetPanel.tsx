@@ -1,10 +1,9 @@
+import { useRef } from "react";
+import { Trash2, Upload } from "lucide-react";
+
 import { QRConfig } from "@/lib/qr-engine";
 import { presets, applyPreset } from "@/lib/qr-presets";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
-import { Upload, Trash2 } from "lucide-react";
-import { useRef } from "react";
-import { Button } from "@/components/ui/button";
+import { Dial } from "@/components/workshop/Dial";
 import { translateQRPreset, useI18n } from "@/shared/i18n/i18n";
 
 interface PresetPanelProps {
@@ -29,122 +28,104 @@ export function PresetPanel({ config, onChange, onPartialChange }: PresetPanelPr
 
   return (
     <div className="space-y-6">
-      {/* Style Presets */}
-      <div className="space-y-3">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {t.qrControls.stylePresets}
-        </Label>
-        <div className="grid grid-cols-1 gap-2">
+      {/*
+        Standing ink mixes, kept as swatch chips on the shelf. Each one shows
+        the actual ink it lays down rather than an abstract icon.
+      */}
+      <div className="space-y-2">
+        <p className="spec">{t.qrControls.stylePresets}</p>
+        <div className="grid grid-cols-2 gap-2">
           {presets.map((preset) => {
-            const translatedPreset = translateQRPreset(locale, preset.name, preset.description);
+            const translated = translateQRPreset(locale, preset.name, preset.description);
+            const swatch =
+              preset.config.colorMode === "gradient"
+                ? `linear-gradient(135deg, ${preset.config.color1}, ${preset.config.color2})`
+                : preset.config.color1 ?? "#000";
 
             return (
               <button
                 key={preset.name}
+                type="button"
                 onClick={() => onChange(applyPreset(config, preset))}
-                className={cn(
-                  "group rounded-xl border p-3 text-start transition-all hover:border-primary/25 hover:bg-muted/50",
-                  "border-border bg-card"
-                )}
+                title={translated.description}
+                className="group flex items-stretch gap-0 overflow-hidden rounded-[3px] text-start transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5"
+                style={{
+                  background: "linear-gradient(180deg, hsl(var(--paper)), hsl(var(--paper-sunk)))",
+                  boxShadow:
+                    "0 1px 0 hsl(var(--lit) / 0.7) inset, 0 1px 2px hsl(var(--cast) / 0.24), 0 4px 10px -4px hsl(var(--cast) / 0.34)",
+                }}
               >
-              <div className="flex items-center gap-3">
-                <div
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border"
-                  style={{
-                    backgroundColor: preset.config.bgColor ?? "#FFFFFF",
-                    borderColor: `${preset.config.color1}33`,
-                  }}
-                >
-                  <div
-                    className="h-5 w-5 rounded"
-                    style={{
-                      background:
-                        preset.config.colorMode === "gradient"
-                          ? `linear-gradient(135deg, ${preset.config.color1}, ${preset.config.color2})`
-                          : preset.config.color1,
-                    }}
-                  />
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-foreground">{translatedPreset.name}</p>
-                  <p className="truncate text-xs text-muted-foreground">{translatedPreset.description}</p>
-                </div>
-              </div>
-
-              <div className="mt-3 flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: preset.config.color1 }} />
-                {preset.config.colorMode === "gradient" && preset.config.color2 && (
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: preset.config.color2 }} />
-                )}
-                <span className="ms-1 text-[10px] uppercase tracking-[0.16em] text-muted-foreground">
-                  {preset.config.moduleStyle ? t.values.moduleStyles[preset.config.moduleStyle] : ""}
+                {/* Ink stripe down the edge of the chip */}
+                <span className="w-2.5 shrink-0" style={{ background: swatch }} aria-hidden />
+                <span className="min-w-0 flex-1 px-2.5 py-2">
+                  <span className="block truncate text-[0.78rem] font-semibold text-ink">{translated.name}</span>
+                  <span className="mt-0.5 block truncate font-mono text-[9.5px] uppercase tracking-[0.12em] text-ink-faint">
+                    {preset.config.moduleStyle ? t.values.moduleStyles[preset.config.moduleStyle] : ""}
+                  </span>
                 </span>
-              </div>
-            </button>
+              </button>
             );
           })}
         </div>
       </div>
 
-      {/* Logo */}
+      {/* The logo plate that gets dropped into the middle of the form. */}
       <div className="space-y-3">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {t.qrControls.centerLogo}
-        </Label>
-        
+        <p className="spec">{t.qrControls.centerLogo}</p>
+
         {config.logoUrl ? (
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-card p-3">
+          <div className="sheet-sunk flex items-center gap-3 p-3">
             <img
               src={config.logoUrl}
               alt={t.qrControls.logoAlt}
-              className="h-10 w-10 rounded object-contain"
+              className="h-11 w-11 shrink-0 bg-paper object-contain p-1"
+              style={{ boxShadow: "0 1px 3px hsl(var(--cast) / 0.4)" }}
             />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-foreground">{t.qrControls.logoUploaded}</p>
-              <p className="text-xs text-muted-foreground">{t.qrControls.scale}: {Math.round(config.logoScale * 100)}%</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[0.8rem] font-medium text-ink">{t.qrControls.logoUploaded}</p>
+              <p className="font-mono text-[10px] text-ink-faint">
+                {t.qrControls.scale}: {Math.round(config.logoScale * 100)}%
+              </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
+            <button
+              type="button"
               onClick={() => onPartialChange({ logoUrl: null })}
-              className="shrink-0"
+              aria-label={t.qrControls.logoAlt}
+              className="tool shrink-0 px-2.5 py-2"
             >
               <Trash2 className="h-4 w-4" />
-            </Button>
+            </button>
           </div>
         ) : (
           <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="w-full flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-border p-6 text-muted-foreground hover:border-primary hover:text-foreground transition-all"
+            className="flex w-full flex-col items-center gap-2 rounded-[3px] px-4 py-6 text-ink-mid transition-colors hover:text-ink"
+            style={{
+              background: "hsl(var(--paper-sunk))",
+              boxShadow:
+                "0 2px 4px hsl(var(--cast) / 0.24) inset, 0 0 0 2px hsl(var(--ink) / 0.12) inset",
+            }}
           >
-            <Upload className="h-6 w-6" />
+            <Upload className="h-5 w-5" />
             <span className="text-xs">{t.qrControls.uploadLogo}</span>
           </button>
         )}
-        
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleLogoUpload}
-          className="hidden"
-        />
+
+        <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
 
         {config.logoUrl && (
-          <div className="space-y-2">
-            <label className="text-xs text-muted-foreground">
-              {t.qrControls.logoScale}: {Math.round(config.logoScale * 100)}%
-            </label>
-            <div>
-              <input
-                type="range"
-                min={10}
-                max={40}
-                value={config.logoScale * 100}
-                onChange={(e) => onPartialChange({ logoScale: Number(e.target.value) / 100 })}
-                className="w-full accent-primary"
-              />
-            </div>
+          <div className="flex justify-center pt-1">
+            <Dial
+              value={Math.round(config.logoScale * 100)}
+              min={10}
+              max={40}
+              step={1}
+              onChange={(percent) => onPartialChange({ logoScale: percent / 100 })}
+              label={t.qrControls.logoScale}
+              unit="%"
+              size={84}
+            />
           </div>
         )}
       </div>

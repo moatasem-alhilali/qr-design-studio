@@ -1,10 +1,7 @@
+import { Link, Wifi, Mail, Phone, MessageSquare, User, Type } from "lucide-react";
+
 import { DataType, QRConfig } from "@/lib/qr-engine";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Link, Wifi, Mail, Phone, MessageSquare, User, Type, Globe,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Tool } from "@/components/workshop/Tool";
 import { useI18n } from "@/shared/i18n/i18n";
 
 const dataTypes: { value: DataType; icon: React.ElementType; placeholder: string }[] = [
@@ -27,36 +24,33 @@ export function DataInput({ config, onChange }: DataInputProps) {
 
   return (
     <div className="space-y-4">
-      <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        {t.qrControls.dataType}
-      </Label>
-      <div className="grid grid-cols-4 gap-1.5">
-        {dataTypes.map(({ value, icon: Icon }) => (
-          <button
-            key={value}
-            onClick={() => onChange({ dataType: value, data: "" })}
-            className={cn(
-              "flex flex-col items-center gap-1 rounded-lg border p-2 text-xs transition-all",
-              config.dataType === value
-                ? "border-primary bg-accent text-accent-foreground"
-                : "border-border bg-card text-muted-foreground hover:bg-muted"
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            {t.values.dataTypes[value]}
-          </button>
-        ))}
+      <div className="space-y-2">
+        <p className="spec">{t.qrControls.dataType}</p>
+        <div className="grid grid-cols-4 gap-1.5">
+          {dataTypes.map(({ value, icon: Icon }) => (
+            <Tool
+              key={value}
+              on={config.dataType === value}
+              onClick={() => onChange({ dataType: value, data: "" })}
+            >
+              <Icon className="h-4 w-4" />
+              {t.values.dataTypes[value]}
+            </Tool>
+          ))}
+        </div>
       </div>
 
       <div className="space-y-2">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <label className="spec block" htmlFor="qr-copy">
           {t.qrControls.content}
-        </Label>
-        <Input
+        </label>
+        <input
+          id="qr-copy"
+          className="field"
           value={config.data}
-          onChange={(e) => onChange({ data: e.target.value })}
-          placeholder={dataTypes.find((d) => d.value === config.dataType)?.placeholder}
-          className="font-mono text-sm"
+          onChange={(event) => onChange({ data: event.target.value })}
+          placeholder={dataTypes.find((type) => type.value === config.dataType)?.placeholder}
+          dir="ltr"
         />
       </div>
     </div>

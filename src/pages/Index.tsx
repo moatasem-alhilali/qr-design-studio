@@ -1,3 +1,6 @@
+import { Barcode, Layers3, Palette, QrCode, ShieldCheck, Sparkles, SquareDashed, Type } from "lucide-react";
+import { motion } from "framer-motion";
+
 import { QRPreview } from "@/components/qr/QRPreview";
 import { DataInput } from "@/components/qr/DataInput";
 import { StyleControls } from "@/components/qr/StyleControls";
@@ -9,12 +12,8 @@ import { BarcodeDataInput } from "@/components/barcode/BarcodeDataInput";
 import { BarcodeStyleControls } from "@/components/barcode/BarcodeStyleControls";
 import { BarcodePresetPanel } from "@/components/barcode/BarcodePresetPanel";
 import { BarcodeReliabilityPanel } from "@/components/barcode/BarcodeReliabilityPanel";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { QrCode, Palette, Sparkles, ShieldCheck, Square, Barcode } from "lucide-react";
-import { motion } from "framer-motion";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { BenchDrawer } from "@/components/workshop/BenchDrawer";
+import { Tool } from "@/components/workshop/Tool";
 import { useDesignerState, type DesignType } from "@/features/designer/hooks/useDesignerState";
 import { useI18n } from "@/shared/i18n/i18n";
 
@@ -33,194 +32,127 @@ const Index = () => {
     handleFullBarcodeChange,
   } = useDesignerState();
 
+  const isQR = designType === "qr";
+
+  const generators = [
+    { value: "qr", label: t.home.qrCode, icon: QrCode, hint: t.home.staticQr },
+    { value: "barcode", label: t.home.barcode, icon: Barcode, hint: t.home.staticBarcode },
+  ] as const;
+
+  const dataReadout = isQR
+    ? `${t.values.dataTypes[config.dataType]} · ${config.data.slice(0, 28) || "—"}`
+    : `${barcodeConfig.format} · ${barcodeConfig.value.slice(0, 24) || "—"}`;
+
+  const styleReadout = isQR
+    ? `${t.values.moduleStyles[config.moduleStyle]} · ${config.size}px`
+    : `${barcodeConfig.barWidth}× · ${barcodeConfig.height}px`;
+
   return (
-    <div className="container px-4 py-6">
-      {/* Desktop layout */}
-      <div className="hidden lg:grid lg:grid-cols-[300px_1fr_300px] gap-6 items-start">
-        {/* Left Panel */}
-        <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
-          <ScrollArea className="h-[calc(100vh-6rem)]">
-            <div className="space-y-6 pr-2">
-              <div className="panel-section">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 block">{t.home.generator}</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { value: "qr", label: t.home.qrCode, icon: QrCode },
-                    { value: "barcode", label: t.home.barcode, icon: Barcode },
-                  ].map(({ value, label, icon: Icon }) => (
-                    <button
-                      key={value}
-                      onClick={() => setDesignType(value as DesignType)}
-                      className={cn(
-                        "flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all",
-                        designType === value
-                          ? "border-primary bg-accent text-accent-foreground"
-                          : "border-border bg-card text-muted-foreground hover:bg-muted"
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+    <div className="mx-auto w-full max-w-[1560px] px-4 py-6">
+      {/*
+        Two zones, the way a real bench is arranged: the press on the left with
+        the sheet currently being pulled, the tool bench on the right. The press
+        stays put while you work through the drawers.
+      */}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_clamp(340px,32vw,440px)]">
+        <motion.section
+          className="lg:sticky lg:top-[9.5rem]"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35 }}
+          aria-label={t.home.press}
+        >
+          {isQR ? (
+            <QRPreview config={config} frame={frameConfig} />
+          ) : (
+            <BarcodePreview config={barcodeConfig} frame={frameConfig} />
+          )}
+        </motion.section>
 
-              <div className="panel-section">
-                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">{t.home.mode}</Label>
-                <p className="text-sm text-foreground">{designType === "qr" ? t.home.staticQr : t.home.staticBarcode}</p>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  {designType === "qr"
-                    ? t.home.qrDescription
-                    : t.home.barcodeDescription}
-                </p>
-              </div>
-
-              <div className="panel-section">
-                <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                  {designType === "qr" ? <QrCode className="h-4 w-4 text-primary" /> : <Barcode className="h-4 w-4 text-primary" />} {t.home.data}
-                </h2>
-                {designType === "qr" ? (
-                  <DataInput config={config} onChange={handleChange} />
-                ) : (
-                  <BarcodeDataInput config={barcodeConfig} onChange={handleBarcodeChange} />
-                )}
-              </div>
-
-              <div className="panel-section">
-                <h2 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <Palette className="h-4 w-4 text-primary" /> {t.home.style}
-                </h2>
-                {designType === "qr" ? (
-                  <StyleControls config={config} onChange={handleChange} />
-                ) : (
-                  <BarcodeStyleControls config={barcodeConfig} onChange={handleBarcodeChange} />
-                )}
-              </div>
+        <motion.aside
+          className="sheet overflow-hidden pb-1"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.08 }}
+          aria-label={t.home.bench}
+        >
+          {/* Which machine is loaded. Always visible — never behind a drawer. */}
+          <div className="sheet-sunk m-3 mb-0 p-3">
+            <p className="spec mb-2">{t.home.generator}</p>
+            <div className="grid grid-cols-2 gap-2">
+              {generators.map(({ value, label, icon: Icon, hint }) => (
+                <Tool
+                  key={value}
+                  on={designType === value}
+                  onClick={() => setDesignType(value as DesignType)}
+                  className="py-3"
+                >
+                  <Icon className="h-5 w-5" />
+                  <span className="text-[0.78rem] font-semibold">{label}</span>
+                  <span className="text-[0.62rem] opacity-70">{hint}</span>
+                </Tool>
+              ))}
             </div>
-          </ScrollArea>
-        </motion.div>
+          </div>
 
-        {/* Center Preview */}
-        <motion.div className="flex flex-col items-center justify-center py-4" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}>
-          {designType === "qr" ? (
-            <QRPreview config={config} frame={frameConfig} />
-          ) : (
-            <BarcodePreview config={barcodeConfig} frame={frameConfig} />
-          )}
-        </motion.div>
-
-        {/* Right Panel */}
-        <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.3 }}>
-          <ScrollArea className="h-[calc(100vh-6rem)]">
-            <Tabs defaultValue="presets" className="pr-2">
-              <TabsList className="w-full grid grid-cols-3 mb-3">
-                <TabsTrigger value="presets" className="text-xs"><Sparkles className="h-3 w-3 me-1" />{t.home.presets}</TabsTrigger>
-                <TabsTrigger value="frame" className="text-xs"><Square className="h-3 w-3 me-1" />{t.home.frame}</TabsTrigger>
-                <TabsTrigger value="quality" className="text-xs"><ShieldCheck className="h-3 w-3 me-1" />{t.home.quality}</TabsTrigger>
-              </TabsList>
-              <TabsContent value="presets" className="panel-section">
-                {designType === "qr" ? (
-                  <PresetPanel config={config} onChange={handleFullChange} onPartialChange={handleChange} />
-                ) : (
-                  <BarcodePresetPanel config={barcodeConfig} onChange={handleFullBarcodeChange} />
-                )}
-              </TabsContent>
-              <TabsContent value="frame" className="panel-section">
-                <QRFrameEditor frame={frameConfig} onChange={setFrameConfig} />
-              </TabsContent>
-              <TabsContent value="quality" className="panel-section">
-                {designType === "qr" ? (
-                  <ScanReliabilityPanel config={config} frame={frameConfig} />
-                ) : (
-                  <BarcodeReliabilityPanel config={barcodeConfig} />
-                )}
-              </TabsContent>
-            </Tabs>
-          </ScrollArea>
-        </motion.div>
-      </div>
-
-      {/* Mobile layout */}
-      <div className="lg:hidden space-y-6">
-        <div className="grid grid-cols-2 gap-2">
-          {[
-            { value: "qr", label: t.home.qrCode, icon: QrCode },
-            { value: "barcode", label: t.home.barcode, icon: Barcode },
-          ].map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              onClick={() => setDesignType(value as DesignType)}
-              className={cn(
-                "flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-xs font-medium transition-all",
-                designType === value
-                  ? "border-primary bg-accent text-accent-foreground"
-                  : "border-border bg-card text-muted-foreground hover:bg-muted"
-              )}
+          <div className="pt-2">
+            <BenchDrawer
+              title={t.home.data}
+              readout={dataReadout}
+              icon={<Type className="h-3 w-3" />}
+              defaultOpen
             >
-              <Icon className="h-4 w-4" />
-              {label}
-            </button>
-          ))}
-        </div>
+              {isQR ? (
+                <DataInput config={config} onChange={handleChange} />
+              ) : (
+                <BarcodeDataInput config={barcodeConfig} onChange={handleBarcodeChange} />
+              )}
+            </BenchDrawer>
 
-        <div className="panel-section">
-          <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">{t.home.mode}</Label>
-          <p className="text-sm text-foreground">{designType === "qr" ? t.home.staticQr : t.home.staticBarcode}</p>
-          <p className="text-[11px] text-muted-foreground mt-1">
-            {designType === "qr"
-              ? t.home.qrDescription
-              : t.home.barcodeDescription}
+            <BenchDrawer
+              title={t.home.style}
+              readout={styleReadout}
+              icon={<Palette className="h-3 w-3" />}
+              tape="cyan"
+              defaultOpen
+            >
+              {isQR ? (
+                <StyleControls config={config} onChange={handleChange} />
+              ) : (
+                <BarcodeStyleControls config={barcodeConfig} onChange={handleBarcodeChange} />
+              )}
+            </BenchDrawer>
+
+            <BenchDrawer title={t.home.presets} icon={<Sparkles className="h-3 w-3" />} tape="magenta">
+              {isQR ? (
+                <PresetPanel config={config} onChange={handleFullChange} onPartialChange={handleChange} />
+              ) : (
+                <BarcodePresetPanel config={barcodeConfig} onChange={handleFullBarcodeChange} />
+              )}
+            </BenchDrawer>
+
+            <BenchDrawer
+              title={t.home.frame}
+              readout={frameConfig.type === "none" ? undefined : frameConfig.type}
+              icon={<SquareDashed className="h-3 w-3" />}
+            >
+              <QRFrameEditor frame={frameConfig} onChange={setFrameConfig} />
+            </BenchDrawer>
+
+            <BenchDrawer title={t.home.quality} icon={<ShieldCheck className="h-3 w-3" />} tape="cyan">
+              {isQR ? (
+                <ScanReliabilityPanel config={config} frame={frameConfig} />
+              ) : (
+                <BarcodeReliabilityPanel config={barcodeConfig} />
+              )}
+            </BenchDrawer>
+          </div>
+
+          <p className="flex items-center gap-2 px-4 py-4 text-[11px] leading-snug text-ink-faint">
+            <Layers3 className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            {isQR ? t.home.qrDescription : t.home.barcodeDescription}
           </p>
-        </div>
-
-        <div className="flex justify-center">
-          {designType === "qr" ? (
-            <QRPreview config={config} frame={frameConfig} />
-          ) : (
-            <BarcodePreview config={barcodeConfig} frame={frameConfig} />
-          )}
-        </div>
-
-        <Tabs defaultValue="data" className="w-full">
-          <TabsList className="w-full grid grid-cols-5">
-            <TabsTrigger value="data" className="text-[10px]">{t.home.data}</TabsTrigger>
-            <TabsTrigger value="style" className="text-[10px]">{t.home.style}</TabsTrigger>
-            <TabsTrigger value="presets" className="text-[10px]">{t.home.presets}</TabsTrigger>
-            <TabsTrigger value="frame" className="text-[10px]">{t.home.frame}</TabsTrigger>
-            <TabsTrigger value="quality" className="text-[10px]">{t.home.quality}</TabsTrigger>
-          </TabsList>
-          <TabsContent value="data" className="panel-section mt-3">
-            {designType === "qr" ? (
-              <DataInput config={config} onChange={handleChange} />
-            ) : (
-              <BarcodeDataInput config={barcodeConfig} onChange={handleBarcodeChange} />
-            )}
-          </TabsContent>
-          <TabsContent value="style" className="panel-section mt-3">
-            {designType === "qr" ? (
-              <StyleControls config={config} onChange={handleChange} />
-            ) : (
-              <BarcodeStyleControls config={barcodeConfig} onChange={handleBarcodeChange} />
-            )}
-          </TabsContent>
-          <TabsContent value="presets" className="panel-section mt-3">
-            {designType === "qr" ? (
-              <PresetPanel config={config} onChange={handleFullChange} onPartialChange={handleChange} />
-            ) : (
-              <BarcodePresetPanel config={barcodeConfig} onChange={handleFullBarcodeChange} />
-            )}
-          </TabsContent>
-          <TabsContent value="frame" className="panel-section mt-3">
-            <QRFrameEditor frame={frameConfig} onChange={setFrameConfig} />
-          </TabsContent>
-          <TabsContent value="quality" className="panel-section mt-3">
-            {designType === "qr" ? (
-              <ScanReliabilityPanel config={config} frame={frameConfig} />
-            ) : (
-              <BarcodeReliabilityPanel config={barcodeConfig} />
-            )}
-          </TabsContent>
-        </Tabs>
+        </motion.aside>
       </div>
     </div>
   );

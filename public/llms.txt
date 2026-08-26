@@ -4,25 +4,25 @@ QR Design Studio is a static browser-based web app for creating styled QR codes 
 
 ## Public Pages
 
-- [Home designer](https://qr-design-dun.vercel.app/) - Create and customize static QR codes and barcodes.
-- [Templates](https://qr-design-dun.vercel.app/templates) - Browse public QR style templates and apply them in the visible UI.
-- [Batch Generator](https://qr-design-dun.vercel.app/batch) - Generate multiple static QR codes from pasted rows or a local CSV file.
-- [Settings](https://qr-design-dun.vercel.app/settings) - Public local settings/about page for this build.
+- [Home designer](https://qrcode.moatasem.dev/) - Create and customize static QR codes and barcodes.
+- [Templates](https://qrcode.moatasem.dev/templates) - Browse public QR style templates and apply them in the visible UI.
+- [Batch Generator](https://qrcode.moatasem.dev/batch) - Generate multiple static QR codes from pasted rows or a local CSV file.
+- [Settings](https://qrcode.moatasem.dev/settings) - Public local settings/about page for this build.
 
 ## Markdown Alternatives
 
-- [Home Markdown](https://qr-design-dun.vercel.app/index.md)
-- [Templates Markdown](https://qr-design-dun.vercel.app/templates/index.md)
-- [Batch Markdown](https://qr-design-dun.vercel.app/batch/index.md)
-- [Settings Markdown](https://qr-design-dun.vercel.app/settings/index.md)
+- [Home Markdown](https://qrcode.moatasem.dev/index.md)
+- [Templates Markdown](https://qrcode.moatasem.dev/templates/index.md)
+- [Batch Markdown](https://qrcode.moatasem.dev/batch/index.md)
+- [Settings Markdown](https://qrcode.moatasem.dev/settings/index.md)
 
 ## Agent Discovery
 
-- API Catalog: https://qr-design-dun.vercel.app/.well-known/api-catalog
-- OpenAPI: https://qr-design-dun.vercel.app/openapi.json
-- Agent Skills: https://qr-design-dun.vercel.app/.well-known/agent-skills/index.json
-- MCP Server Card: https://qr-design-dun.vercel.app/.well-known/mcp/server-card.json
-- Sitemap: https://qr-design-dun.vercel.app/sitemap.xml
+- API Catalog: https://qrcode.moatasem.dev/.well-known/api-catalog
+- OpenAPI: https://qrcode.moatasem.dev/openapi.json
+- Agent Skills: https://qrcode.moatasem.dev/.well-known/agent-skills/index.json
+- MCP Server Card: https://qrcode.moatasem.dev/.well-known/mcp/server-card.json
+- Sitemap: https://qrcode.moatasem.dev/sitemap.xml
 
 ## Public API Scope
 

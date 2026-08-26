@@ -1,33 +1,33 @@
 import { QRConfig, ModuleStyle, CornerStyle, ColorMode } from "@/lib/qr-engine";
-import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
-import { Square, Circle, Diamond, Hexagon, RectangleHorizontal, Heart, Star, Triangle, Grid2x2 } from "lucide-react";
+import { Tool } from "@/components/workshop/Tool";
+import { Dial } from "@/components/workshop/Dial";
+import { InkWell } from "@/components/workshop/InkWell";
+import { CornerGlyph, ModuleGlyph } from "@/components/qr/glyphs";
 import { useI18n } from "@/shared/i18n/i18n";
 
-const moduleStyles: { value: ModuleStyle; icon: React.ElementType }[] = [
-  { value: "square", icon: Square },
-  { value: "rounded", icon: RectangleHorizontal },
-  { value: "dots", icon: Circle },
-  { value: "diamond", icon: Diamond },
-  { value: "extra-rounded", icon: Hexagon },
-  { value: "tiny-squares", icon: Grid2x2 },
-  { value: "heart", icon: Heart },
-  { value: "star", icon: Star },
-  { value: "triangle", icon: Triangle },
-  { value: "bubble", icon: Circle },
+const moduleStyles: ModuleStyle[] = [
+  "square",
+  "rounded",
+  "dots",
+  "diamond",
+  "extra-rounded",
+  "tiny-squares",
+  "heart",
+  "star",
+  "triangle",
+  "bubble",
 ];
 
-const cornerStyles: { value: CornerStyle }[] = [
-  { value: "square" },
-  { value: "rounded" },
-  { value: "circle" },
-  { value: "thick" },
-  { value: "minimal" },
-  { value: "decorative" },
-  { value: "ring" },
-  { value: "leaf" },
-  { value: "frame-dots" },
+const cornerStyles: CornerStyle[] = [
+  "square",
+  "rounded",
+  "circle",
+  "thick",
+  "minimal",
+  "decorative",
+  "ring",
+  "leaf",
+  "frame-dots",
 ];
 
 interface StyleControlsProps {
@@ -40,179 +40,119 @@ export function StyleControls({ config, onChange }: StyleControlsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Module Style */}
-      <div className="space-y-3">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {t.qrControls.moduleShape}
-        </Label>
-        <div className="grid grid-cols-5 gap-1.5">
-          {moduleStyles.map(({ value, icon: Icon }) => (
-            <button
-              key={value}
-              onClick={() => onChange({ moduleStyle: value })}
-              className={cn(
-                "flex flex-col items-center gap-1 rounded-lg border p-2 text-xs transition-all",
-                config.moduleStyle === value
-                  ? "border-primary bg-accent text-accent-foreground"
-                  : "border-border bg-card text-muted-foreground hover:bg-muted"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-              {t.values.moduleStyles[value]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Corner Style */}
-      <div className="space-y-3">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {t.qrControls.cornerStyle}
-        </Label>
-        <div className="grid grid-cols-3 gap-1.5">
-          {cornerStyles.map(({ value }) => (
-            <button
-              key={value}
-              onClick={() => onChange({ cornerStyle: value })}
-              className={cn(
-                "rounded-lg border px-3 py-2 text-xs font-medium transition-all",
-                config.cornerStyle === value
-                  ? "border-primary bg-accent text-accent-foreground"
-                  : "border-border bg-card text-muted-foreground hover:bg-muted"
-              )}
-            >
-              {t.values.cornerStyles[value]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Colors */}
-      <div className="space-y-3">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {t.qrControls.colorMode}
-        </Label>
-        <div className="flex gap-2">
-          {(["single", "gradient"] as ColorMode[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => onChange({ colorMode: mode })}
-              className={cn(
-                "flex-1 rounded-lg border px-3 py-2 text-xs font-medium capitalize transition-all",
-                config.colorMode === mode
-                  ? "border-primary bg-accent text-accent-foreground"
-                  : "border-border bg-card text-muted-foreground hover:bg-muted"
-              )}
-            >
-              {t.values.colorModes[mode]}
-            </button>
-          ))}
-        </div>
-
-        <div className="flex gap-3 items-center">
-          <div className="space-y-1 flex-1">
-            <label className="text-xs text-muted-foreground">{t.qrControls.color1}</label>
-            <div className="flex gap-2 items-center">
-              <input
-                type="color"
-                value={config.color1}
-                onChange={(e) => onChange({ color1: e.target.value })}
-                className="h-8 w-8 rounded border border-border cursor-pointer"
-              />
-              <span className="text-xs font-mono text-muted-foreground">{config.color1}</span>
-            </div>
-          </div>
-          {config.colorMode === "gradient" && (
-            <div className="space-y-1 flex-1">
-              <label className="text-xs text-muted-foreground">{t.qrControls.color2}</label>
-              <div className="flex gap-2 items-center">
-                <input
-                  type="color"
-                  value={config.color2}
-                  onChange={(e) => onChange({ color2: e.target.value })}
-                  className="h-8 w-8 rounded border border-border cursor-pointer"
-                />
-                <span className="text-xs font-mono text-muted-foreground">{config.color2}</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">{t.qrControls.background}</label>
-          <div className="flex gap-2 items-center">
-            <input
-              type="color"
-              value={config.bgColor}
-              onChange={(e) => onChange({ bgColor: e.target.value })}
-              className="h-8 w-8 rounded border border-border cursor-pointer"
-              disabled={config.transparentBg}
-            />
-            <button
-              onClick={() => onChange({ transparentBg: !config.transparentBg })}
-              className={cn(
-                "text-xs px-2 py-1 rounded border transition-all",
-                config.transparentBg
-                  ? "border-primary bg-accent text-accent-foreground"
-                  : "border-border text-muted-foreground hover:bg-muted"
-              )}
-            >
-              {t.qrControls.transparent}
-            </button>
-          </div>
-        </div>
-
-        {config.colorMode === "gradient" && (
-          <div className="space-y-2">
-            <label className="text-xs text-muted-foreground">
-              {t.qrControls.gradientAngle}: {config.gradientAngle}°
-            </label>
-            <Slider
-              value={[config.gradientAngle]}
-              onValueChange={([v]) => onChange({ gradientAngle: v })}
-              min={0}
-              max={360}
-              step={15}
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Size */}
+      {/* Module face — a specimen sheet of the actual geometry. */}
       <div className="space-y-2">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {t.qrControls.size}: {config.size}px
-        </Label>
-        <Slider
-          value={[config.size]}
-          onValueChange={([v]) => onChange({ size: v })}
+        <p className="spec">{t.qrControls.moduleShape}</p>
+        <div className="grid grid-cols-5 gap-1.5">
+          {moduleStyles.map((value) => (
+            <Tool key={value} on={config.moduleStyle === value} onClick={() => onChange({ moduleStyle: value })}>
+              <ModuleGlyph style={value} />
+              {t.values.moduleStyles[value]}
+            </Tool>
+          ))}
+        </div>
+      </div>
+
+      {/* Finder pattern face. */}
+      <div className="space-y-2">
+        <p className="spec">{t.qrControls.cornerStyle}</p>
+        <div className="grid grid-cols-5 gap-1.5">
+          {cornerStyles.map((value) => (
+            <Tool key={value} on={config.cornerStyle === value} onClick={() => onChange({ cornerStyle: value })}>
+              <CornerGlyph style={value} />
+              {t.values.cornerStyles[value]}
+            </Tool>
+          ))}
+        </div>
+      </div>
+
+      {/* The ink tray. */}
+      <div className="space-y-3">
+        <p className="spec">{t.home.inkTray}</p>
+
+        <div className="grid grid-cols-2 gap-1.5">
+          {(["single", "gradient"] as ColorMode[]).map((mode) => (
+            <Tool key={mode} wide on={config.colorMode === mode} onClick={() => onChange({ colorMode: mode })}>
+              {t.values.colorModes[mode]}
+            </Tool>
+          ))}
+        </div>
+
+        <div className="sheet-sunk flex flex-wrap items-start justify-center gap-x-5 gap-y-3 p-3">
+          <InkWell
+            value={config.color1}
+            onChange={(hex) => onChange({ color1: hex })}
+            label={t.qrControls.color1}
+          />
+          {config.colorMode === "gradient" && (
+            <InkWell
+              value={config.color2}
+              onChange={(hex) => onChange({ color2: hex })}
+              label={t.qrControls.color2}
+            />
+          )}
+          <InkWell
+            value={config.bgColor}
+            onChange={(hex) => onChange({ bgColor: hex })}
+            label={t.qrControls.background}
+            empty={config.transparentBg}
+          />
+        </div>
+
+        <Tool
+          wide
+          on={config.transparentBg}
+          onClick={() => onChange({ transparentBg: !config.transparentBg })}
+          className="w-full"
+        >
+          {t.qrControls.transparent}
+        </Tool>
+      </div>
+
+      {/* Machined dials: the two continuous settings on the press. */}
+      <div className="flex flex-wrap items-start justify-center gap-6 pt-1">
+        <Dial
+          value={config.size}
           min={200}
           max={1200}
           step={50}
+          onChange={(size) => onChange({ size })}
+          label={t.qrControls.size}
+          unit="px"
         />
+        {config.colorMode === "gradient" && (
+          <Dial
+            value={config.gradientAngle}
+            min={0}
+            max={360}
+            step={15}
+            onChange={(gradientAngle) => onChange({ gradientAngle })}
+            label={t.qrControls.gradientAngle}
+            unit="°"
+          />
+        )}
       </div>
 
-      {/* Error Correction */}
-      <div className="space-y-3">
-        <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          {t.qrControls.errorCorrection}
-        </Label>
+      {/* Error correction: how much of the plate can be damaged and still read. */}
+      <div className="space-y-2">
+        <p className="spec">{t.qrControls.errorCorrection}</p>
         <div className="grid grid-cols-4 gap-1.5">
           {(["L", "M", "Q", "H"] as const).map((level) => (
-            <button
+            <Tool
               key={level}
+              on={config.errorCorrection === level}
               onClick={() => onChange({ errorCorrection: level })}
-              className={cn(
-                "rounded-lg border px-3 py-2 text-xs font-mono font-semibold transition-all",
-                config.errorCorrection === level
-                  ? "border-primary bg-accent text-accent-foreground"
-                  : "border-border bg-card text-muted-foreground hover:bg-muted"
-              )}
+              disabled={Boolean(config.logoUrl)}
+              title={config.logoUrl ? "H" : undefined}
+              className="font-mono text-sm font-bold"
             >
               {level}
-            </button>
+            </Tool>
           ))}
         </div>
+        {config.logoUrl && (
+          <p className="text-[11px] leading-snug text-ink-faint">{t.qrControls.errorCorrectionLocked}</p>
+        )}
       </div>
     </div>
   );

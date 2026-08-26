@@ -1,11 +1,11 @@
 import { useState, useRef, type ChangeEvent } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { Upload, Plus, Trash2, Download, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
+import { Sheet } from '@/components/workshop/Sheet';
+import { Stamp } from '@/components/workshop/Stamp';
+import { ColourBar } from '@/components/workshop/InkWell';
 import { useBatchRows } from '@/features/batch/hooks/useBatchRows';
 import {
   downloadBlob,
@@ -56,71 +56,113 @@ export default function BatchPage() {
   };
 
   return (
-    <div className="container px-4 py-6 max-w-4xl">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-foreground mb-2">{t.batch.title}</h1>
-        <p className="text-muted-foreground">{t.batch.description}</p>
-      </div>
+    <div className="mx-auto w-full max-w-[1000px] px-4 py-8">
+      <header className="mb-7 max-w-2xl">
+        <p className="spec mb-2">{t.batch.items} · {t.batch.qrCodes}</p>
+        <h1 className="plate-title letterpress text-[2.4rem] sm:text-[3rem]">{t.batch.title}</h1>
+        <ColourBar className="my-4 max-w-[220px] opacity-80" />
+        <p className="text-sm leading-relaxed text-ink-mid">{t.batch.description}</p>
+      </header>
 
-      <div className="space-y-6">
-        <div className="flex gap-3 flex-wrap">
-          <Button variant="outline" className="gap-2" onClick={() => fileRef.current?.click()}>
-            <Upload className="h-4 w-4" /> {t.batch.importCsv}
-          </Button>
-          <Button variant="outline" className="gap-2" onClick={addRow}>
-            <Plus className="h-4 w-4" /> {t.batch.addRow}
-          </Button>
-          <input ref={fileRef} type="file" accept=".csv,.txt" onChange={handleCSVUpload} className="hidden" />
-          <p className="text-xs text-muted-foreground self-center">{t.batch.csvFormat}</p>
-        </div>
-
-        <div className="space-y-2">
-          <Label className="text-xs text-muted-foreground">{t.batch.quickPaste}</Label>
-          <Textarea
-            placeholder={t.batch.pastePlaceholder}
-            rows={3}
-            onPaste={(e) => {
-              const text = e.clipboardData.getData('text');
-              if (handlePasteMultiple(text)) e.preventDefault();
-            }}
-          />
-        </div>
-
-        {rows.length > 0 && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">{rows.length} {t.batch.items} · {validRows.length} {t.batch.valid}</Label>
-            </div>
-            <div className="space-y-1.5 max-h-96 overflow-y-auto">
-              {rows.map((row, i) => (
-                <div key={row.id} className={cn(
-                  "flex items-center gap-2 rounded-lg border p-2",
-                  row.status === 'completed' ? 'border-success/30 bg-success/5' : row.status === 'error' ? 'border-destructive/30 bg-destructive/5' : 'border-border'
-                )}>
-                  <span className="text-xs text-muted-foreground w-6 text-center">{i + 1}</span>
-                  <Input value={row.data} onChange={e => updateRow(row.id, { data: e.target.value })} placeholder={t.batch.dataPlaceholder} className="flex-1 h-8 text-xs" />
-                  <Input value={row.label} onChange={e => updateRow(row.id, { label: e.target.value })} placeholder={t.batch.labelPlaceholder} className="w-32 h-8 text-xs" />
-                  {row.status === 'completed' && <CheckCircle className="h-4 w-4 text-success shrink-0" />}
-                  {row.status === 'error' && <AlertCircle className="h-4 w-4 text-destructive shrink-0" />}
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeRow(row.id)}>
-                    <Trash2 className="h-3 w-3" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+      {/* The run sheet: everything for one press run on a single docket. */}
+      <Sheet marks label={t.batch.title} className="overflow-hidden">
+        <div className="space-y-5 p-4 pt-8 sm:p-6 sm:pt-9">
+          <div className="flex flex-wrap items-center gap-3">
+            <button type="button" className="tool tool-wide px-3" onClick={() => fileRef.current?.click()}>
+              <Upload className="h-4 w-4" /> {t.batch.importCsv}
+            </button>
+            <button type="button" className="tool tool-wide px-3" onClick={addRow}>
+              <Plus className="h-4 w-4" /> {t.batch.addRow}
+            </button>
+            <input ref={fileRef} type="file" accept=".csv,.txt" onChange={handleCSVUpload} className="hidden" />
+            <p className="font-mono text-[11px] text-ink-faint">{t.batch.csvFormat}</p>
           </div>
-        )}
 
-        <div className="flex gap-3">
-          <Button onClick={generateAll} disabled={generating || validRows.length === 0} className="gap-2">
-            {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-            {generating ? t.batch.generating : `${t.batch.generate} ${validRows.length} ${t.batch.qrCodes}`}
-          </Button>
+          <div className="space-y-2">
+            <label className="spec block" htmlFor="batch-paste">{t.batch.quickPaste}</label>
+            <textarea
+              id="batch-paste"
+              className="field resize-y"
+              placeholder={t.batch.pastePlaceholder}
+              rows={3}
+              dir="ltr"
+              onPaste={(e) => {
+                const text = e.clipboardData.getData('text');
+                if (handlePasteMultiple(text)) e.preventDefault();
+              }}
+            />
+          </div>
+
           {rows.length > 0 && (
-            <Button variant="outline" onClick={clearRows}>{t.batch.clearAll}</Button>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="spec">
+                  {rows.length} {t.batch.items} · {validRows.length} {t.batch.valid}
+                </p>
+              </div>
+
+              <div className="sheet-sunk max-h-[26rem] overflow-y-auto p-1.5">
+                {rows.map((row, i) => (
+                  <div
+                    key={row.id}
+                    className={cn(
+                      'flex items-center gap-2 rounded-[2px] p-1.5',
+                      row.status === 'completed' && 'bg-success/10',
+                      row.status === 'error' && 'bg-destructive/10',
+                    )}
+                  >
+                    <span className="w-7 shrink-0 text-center font-mono text-[11px] tabular-nums text-ink-faint">
+                      {String(i + 1).padStart(2, '0')}
+                    </span>
+                    <input
+                      className="field h-8 flex-1 py-0 text-xs"
+                      value={row.data}
+                      onChange={e => updateRow(row.id, { data: e.target.value })}
+                      placeholder={t.batch.dataPlaceholder}
+                      dir="ltr"
+                    />
+                    <input
+                      className="field h-8 w-32 shrink-0 py-0 text-xs"
+                      value={row.label}
+                      onChange={e => updateRow(row.id, { label: e.target.value })}
+                      placeholder={t.batch.labelPlaceholder}
+                    />
+                    {row.status === 'completed' && <CheckCircle className="h-4 w-4 shrink-0 text-success" />}
+                    {row.status === 'error' && <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />}
+                    <button
+                      type="button"
+                      className="tool shrink-0 px-2 py-1.5"
+                      onClick={() => removeRow(row.id)}
+                      aria-label={t.batch.clearAll}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
         </div>
-      </div>
+
+        <hr className="perf" />
+
+        <div className="flex flex-wrap items-center justify-between gap-3 p-4 sm:px-6">
+          <span className="spec">{t.batch.generate}</span>
+          <div className="flex flex-wrap items-center gap-3">
+            {rows.length > 0 && (
+              <button type="button" className="tool tool-wide px-3" onClick={clearRows}>
+                {t.batch.clearAll}
+              </button>
+            )}
+            <Stamp solid onClick={generateAll} disabled={generating || validRows.length === 0}>
+              {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              {generating ? t.batch.generating : `${t.batch.generate} ${validRows.length}`}
+            </Stamp>
+          </div>
+        </div>
+
+        <ColourBar />
+      </Sheet>
     </div>
   );
 }

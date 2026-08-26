@@ -15,8 +15,11 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
+        // Shop signage: heavy, optical-sized, unmistakably not Inter.
+        display: ["Bricolage Grotesque", "IBM Plex Sans Arabic", "system-ui", "sans-serif"],
+        // One family carries both Latin and Arabic, so RTL never falls back.
+        sans: ["IBM Plex Sans Arabic", "system-ui", "sans-serif"],
+        mono: ["IBM Plex Mono", "ui-monospace", "monospace"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -58,6 +61,27 @@ export default {
         },
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
+        // Workshop materials, addressable directly from markup.
+        desk: {
+          DEFAULT: "hsl(var(--desk))",
+          deep: "hsl(var(--desk-deep))",
+        },
+        paper: {
+          DEFAULT: "hsl(var(--paper))",
+          sunk: "hsl(var(--paper-sunk))",
+          edge: "hsl(var(--paper-edge))",
+        },
+        ink: {
+          DEFAULT: "hsl(var(--ink))",
+          mid: "hsl(var(--ink-mid))",
+          faint: "hsl(var(--ink-faint))",
+        },
+        press: {
+          red: "hsl(var(--press-red))",
+          cyan: "hsl(var(--press-cyan))",
+          magenta: "hsl(var(--press-magenta))",
+          yellow: "hsl(var(--press-yellow))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",

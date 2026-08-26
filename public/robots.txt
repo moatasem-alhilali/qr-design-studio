@@ -10,5 +10,5 @@ Disallow: /login
 Disallow: /signup
 Disallow: /dashboard
 Disallow: /r/
-Sitemap: https://qr-design-dun.vercel.app/sitemap.xml
+Sitemap: https://qrcode.moatasem.dev/sitemap.xml
 Content-Signal: ai-train=no, search=yes, ai-input=yes

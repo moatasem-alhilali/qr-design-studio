@@ -1,20 +1,21 @@
-import { QRConfig } from '@/lib/qr-engine';
-import { analyzeScanReliability } from '@/lib/scan-reliability';
-import { FrameConfig } from '@/lib/types';
-import { cn } from '@/lib/utils';
-import { ShieldCheck, AlertTriangle, AlertCircle, Info } from 'lucide-react';
-import { translateReliabilityGrade, translateReliabilityText, useI18n } from '@/shared/i18n/i18n';
+import { AlertCircle, AlertTriangle, Info } from "lucide-react";
+
+import { QRConfig } from "@/lib/qr-engine";
+import { analyzeScanReliability } from "@/lib/scan-reliability";
+import { FrameConfig } from "@/lib/types";
+import { cn } from "@/lib/utils";
+import { translateReliabilityGrade, translateReliabilityText, useI18n } from "@/shared/i18n/i18n";
 
 interface ScanReliabilityPanelProps {
   config: QRConfig;
   frame?: FrameConfig;
 }
 
-const gradeColors: Record<string, string> = {
-  Excellent: 'text-success border-success/30 bg-success/10',
-  Good: 'text-primary border-primary/30 bg-primary/10',
-  Warning: 'text-warning border-warning/30 bg-warning/10',
-  Risky: 'text-destructive border-destructive/30 bg-destructive/10',
+const gradeInk: Record<string, string> = {
+  Excellent: "hsl(var(--success))",
+  Good: "hsl(var(--press-cyan))",
+  Warning: "hsl(var(--warning))",
+  Risky: "hsl(var(--destructive))",
 };
 
 const severityIcons = {
@@ -23,42 +24,76 @@ const severityIcons = {
   error: AlertCircle,
 };
 
+/**
+ * The press check. A pressman pulls a sheet, measures density and signs it off
+ * — so the score reads as a density gauge and an inspection docket, not as a
+ * progress bar in a card.
+ */
 export function ScanReliabilityPanel({ config, frame }: ScanReliabilityPanelProps) {
   const { locale, t } = useI18n();
   const result = analyzeScanReliability(config, frame);
+  const ink = gradeInk[result.grade] ?? "hsl(var(--ink))";
 
   return (
     <div className="space-y-3">
-      <div className={cn("flex items-center gap-3 rounded-lg border p-3", gradeColors[result.grade])}>
-        <ShieldCheck className="h-5 w-5 shrink-0" />
-        <div>
-          <p className="font-semibold text-sm">{translateReliabilityGrade(locale, result.grade)}</p>
-          <p className="text-xs opacity-80">{t.qrControls.reliabilityScore}: {result.score}/100</p>
+      <div className="sheet-sunk flex items-center gap-4 p-3">
+        {/* Density gauge: a filled column, like an ink-key readout. */}
+        <div
+          className="relative h-14 w-8 shrink-0 overflow-hidden rounded-[2px]"
+          style={{ background: "hsl(var(--ink) / 0.1)" }}
+          aria-hidden
+        >
+          <div
+            className="absolute inset-x-0 bottom-0 transition-[height] duration-300"
+            style={{ height: `${result.score}%`, background: ink }}
+          />
+          {[25, 50, 75].map((mark) => (
+            <span
+              key={mark}
+              className="absolute inset-x-0 h-px"
+              style={{ bottom: `${mark}%`, background: "hsl(var(--paper) / 0.6)" }}
+            />
+          ))}
+        </div>
+
+        <div className="min-w-0">
+          <p className="plate-title text-lg leading-none" style={{ color: ink }}>
+            {translateReliabilityGrade(locale, result.grade)}
+          </p>
+          <p className="spec mt-1.5">{t.qrControls.reliabilityScore}</p>
+          <p className="font-mono text-sm font-semibold tabular-nums text-ink">
+            {result.score}
+            <span className="text-ink-faint">/100</span>
+          </p>
         </div>
       </div>
 
-      {result.issues.length > 0 && (
-        <div className="space-y-2">
-          {result.issues.map((issue, i) => {
+      {result.issues.length > 0 ? (
+        <ul className="space-y-0">
+          {result.issues.map((issue, index) => {
             const Icon = severityIcons[issue.severity];
             return (
-              <div key={i} className="flex gap-2 text-xs rounded-lg border border-border p-2">
-                <Icon className={cn(
-                  "h-3.5 w-3.5 shrink-0 mt-0.5",
-                  issue.severity === 'error' ? 'text-destructive' : issue.severity === 'warning' ? 'text-warning' : 'text-muted-foreground'
-                )} />
-                <div>
-                  <p className="font-medium text-foreground">{translateReliabilityText(locale, issue.message)}</p>
-                  <p className="text-muted-foreground">{translateReliabilityText(locale, issue.suggestion)}</p>
+              <li key={index} className="flex gap-2.5 py-2.5">
+                <Icon
+                  className={cn(
+                    "mt-0.5 h-3.5 w-3.5 shrink-0",
+                    issue.severity === "error"
+                      ? "text-destructive"
+                      : issue.severity === "warning"
+                        ? "text-warning"
+                        : "text-ink-faint",
+                  )}
+                />
+                <div className="min-w-0 text-xs leading-snug">
+                  <p className="font-medium text-ink">{translateReliabilityText(locale, issue.message)}</p>
+                  <p className="mt-0.5 text-ink-mid">{translateReliabilityText(locale, issue.suggestion)}</p>
                 </div>
-              </div>
+              </li>
             );
           })}
-        </div>
-      )}
-
-      {result.issues.length === 0 && (
-        <p className="text-xs text-muted-foreground text-center py-2">{t.qrControls.noIssues}</p>
+        </ul>
+      ) : (
+        <p className="py-2 text-center text-xs text-ink-mid">{t.qrControls.noIssues}</p>
       )}
     </div>
   );

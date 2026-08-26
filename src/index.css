@@ -1,121 +1,534 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   THE PRINT WORKSHOP
+   --------------------------------------------------------------------------
+   A material design language, not a dashboard one. Everything on screen is a
+   physical object on a workbench: kraft-paper desk, cotton paper sheets,
+   process-ink wells, machined dials, rubber stamps.
+
+   Rules that keep it coherent:
+     - No floating "cards". Surfaces are either paper (light, grained) or
+       machined metal (dark, brushed). They sit ON the desk, they don't hover.
+     - No 1px grey outlines. Separation comes from shadow, grain and perforation.
+     - Corners are near-square. Paper and steel do not have 12px radii.
+     - Every interactive control has a real pressed state that moves in Z.
+   ========================================================================== */
+
 @layer base {
   :root {
-    --background: 220 16% 96%;
-    --foreground: 220 20% 10%;
+    /* --- Materials ------------------------------------------------------ */
+    --desk: 33 21% 76%;
+    --desk-deep: 31 19% 66%;
+    --paper: 42 48% 97%;
+    --paper-sunk: 40 30% 92%;
+    --paper-edge: 34 22% 83%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 10%;
+    --ink: 24 17% 12%;
+    --ink-mid: 26 10% 37%;
+    --ink-faint: 28 9% 55%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 10%;
+    /* --- Process inks (CMYK + registration red) -------------------------- */
+    --press-red: 8 74% 47%;
+    --press-cyan: 191 86% 36%;
+    --press-magenta: 330 74% 50%;
+    --press-yellow: 42 95% 51%;
 
-    --primary: 250 60% 52%;
-    --primary-foreground: 0 0% 100%;
+    --lit: 0 0% 100%;          /* specular highlight on raised edges */
+    --cast: 30 28% 44%;        /* colour of every cast shadow */
+    --cast-strength: 0.26;
 
-    --secondary: 220 14% 90%;
-    --secondary-foreground: 220 20% 20%;
+    /* --- shadcn contract (remapped onto the materials above) ------------- */
+    --background: var(--desk);
+    --foreground: var(--ink);
 
-    --muted: 220 14% 92%;
-    --muted-foreground: 220 10% 46%;
+    --card: var(--paper);
+    --card-foreground: var(--ink);
 
-    --accent: 250 60% 96%;
-    --accent-foreground: 250 60% 40%;
+    --popover: var(--paper);
+    --popover-foreground: var(--ink);
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    --primary: var(--press-red);
+    --primary-foreground: 42 48% 97%;
 
-    --border: 220 14% 88%;
-    --input: 220 14% 88%;
-    --ring: 250 60% 52%;
+    --secondary: var(--paper-sunk);
+    --secondary-foreground: var(--ink);
 
-    --radius: 0.75rem;
+    --muted: 36 22% 87%;
+    --muted-foreground: var(--ink-mid);
 
-    --surface: 0 0% 100%;
-    --surface-elevated: 220 20% 98%;
-    --success: 152 60% 42%;
-    --warning: 38 92% 50%;
+    --accent: 8 58% 92%;
+    --accent-foreground: 8 74% 32%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --destructive: 4 72% 46%;
+    --destructive-foreground: 42 48% 97%;
+
+    --border: var(--paper-edge);
+    --input: var(--paper-edge);
+    --ring: var(--press-red);
+
+    --radius: 0.25rem;
+
+    --surface: var(--paper);
+    --surface-elevated: 42 52% 99%;
+    --success: 152 52% 34%;
+    --warning: 36 88% 42%;
+
+    --sidebar-background: var(--paper);
+    --sidebar-foreground: var(--ink);
+    --sidebar-primary: var(--press-red);
+    --sidebar-primary-foreground: 42 48% 97%;
+    --sidebar-accent: var(--paper-sunk);
+    --sidebar-accent-foreground: var(--ink);
+    --sidebar-border: var(--paper-edge);
+    --sidebar-ring: var(--press-red);
+
+    /* --- Textures -------------------------------------------------------- */
+    --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='140' height='140' filter='url(%23g)'/></svg>");
+    --grain-opacity: 0.35;
+    --grain-blend: multiply;
   }
 
+  /* The darkroom. Same workshop after hours: walnut bench, safelight on. */
   .dark {
-    --background: 224 20% 6%;
-    --foreground: 210 20% 92%;
+    --desk: 24 16% 9%;
+    --desk-deep: 24 18% 6%;
+    --paper: 26 11% 14%;
+    --paper-sunk: 25 12% 11%;
+    --paper-edge: 28 10% 22%;
 
-    --card: 224 18% 10%;
-    --card-foreground: 210 20% 92%;
+    --ink: 38 30% 90%;
+    --ink-mid: 32 12% 64%;
+    --ink-faint: 30 9% 46%;
 
-    --popover: 224 18% 10%;
-    --popover-foreground: 210 20% 92%;
+    --press-red: 8 80% 58%;
+    --press-cyan: 191 76% 52%;
+    --press-magenta: 330 78% 62%;
+    --press-yellow: 42 92% 58%;
 
-    --primary: 250 60% 60%;
-    --primary-foreground: 0 0% 100%;
+    /* Under a safelight the specular edge is a dim warm grey, not near-white;
+       reusing the light-mode value here blows every raised edge out. */
+    --lit: 32 14% 42%;
+    --cast: 24 40% 2%;
+    --cast-strength: 0.55;
 
-    --secondary: 224 14% 16%;
-    --secondary-foreground: 210 20% 80%;
+    --primary-foreground: 24 16% 9%;
+    --secondary-foreground: var(--ink);
+    --muted: 26 10% 18%;
+    --accent: 8 40% 22%;
+    --accent-foreground: 8 80% 74%;
+    --destructive: 4 68% 52%;
+    --destructive-foreground: 38 30% 90%;
+    --surface-elevated: 26 11% 17%;
+    --success: 152 44% 52%;
+    --warning: 36 84% 58%;
 
-    --muted: 224 14% 14%;
-    --muted-foreground: 220 10% 54%;
-
-    --accent: 250 40% 16%;
-    --accent-foreground: 250 60% 75%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 224 14% 16%;
-    --input: 224 14% 16%;
-    --ring: 250 60% 60%;
-
-    --surface: 224 18% 10%;
-    --surface-elevated: 224 18% 13%;
-    --success: 152 60% 42%;
-    --warning: 38 92% 50%;
-
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --grain-opacity: 0.5;
+    --grain-blend: overlay;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
     @apply bg-background text-foreground font-sans antialiased;
+    /* The desk: kraft board with a woven linen tooth. */
+    background-image:
+      repeating-linear-gradient(90deg, hsl(var(--desk-deep) / 0.16) 0 1px, transparent 1px 4px),
+      repeating-linear-gradient(0deg, hsl(var(--desk-deep) / 0.16) 0 1px, transparent 1px 4px),
+      radial-gradient(120% 80% at 50% -10%, hsl(var(--lit) / 0.14), transparent 60%);
+    background-attachment: fixed;
+  }
+
+  /* Focus is a printed keyline, never a glowing halo. */
+  :focus-visible {
+    outline: 2px solid hsl(var(--press-red));
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: hsl(var(--press-yellow) / 0.4);
+    color: hsl(var(--ink));
+  }
+}
+
+@layer components {
+  /* ---------------------------------------------------------------------
+     PAPER
+     A sheet lies on the desk: soft contact shadow at the bottom edge, a
+     lifted cast shadow further out, fibre grain across the face.
+     --------------------------------------------------------------------- */
+  .sheet {
+    position: relative;
+    isolation: isolate;
+    background-color: hsl(var(--paper));
+    border-radius: 3px;
+    box-shadow:
+      0 1px 0 hsl(var(--lit) / 0.55) inset,
+      0 -1px 0 hsl(var(--cast) / 0.12) inset,
+      0 1px 1px hsl(var(--cast) / calc(var(--cast-strength) * 0.7)),
+      0 8px 18px -6px hsl(var(--cast) / calc(var(--cast-strength) * 0.9)),
+      0 22px 40px -22px hsl(var(--cast) / var(--cast-strength));
+  }
+
+  .sheet::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background-image: var(--grain);
+    opacity: var(--grain-opacity);
+    mix-blend-mode: var(--grain-blend);
+    pointer-events: none;
+  }
+
+  /* A sheet pressed into the desk rather than resting on it. */
+  .sheet-sunk {
+    background-color: hsl(var(--paper-sunk));
+    border-radius: 3px;
+    box-shadow:
+      0 2px 5px hsl(var(--cast) / calc(var(--cast-strength) * 0.55)) inset,
+      0 1px 0 hsl(var(--lit) / 0.4);
+  }
+
+  /* ---------------------------------------------------------------------
+     TAPE LABEL
+     Section headings are strips of tape stuck to the sheet, not <h2>s in a
+     card header. Slightly translucent, slightly crooked, torn short edges.
+     --------------------------------------------------------------------- */
+  .tape {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 1.1rem;
+    font-family: theme("fontFamily.mono");
+    font-size: 0.66rem;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: hsl(var(--ink) / 0.78);
+    background: linear-gradient(
+      175deg,
+      hsl(var(--press-yellow) / 0.42),
+      hsl(var(--press-yellow) / 0.28)
+    );
+    box-shadow: 0 1px 2px hsl(var(--cast) / 0.22);
+    /* torn/serrated ends */
+    clip-path: polygon(
+      3px 0, calc(100% - 5px) 2px, 100% 40%, calc(100% - 3px) 100%,
+      6px calc(100% - 2px), 0 55%
+    );
+    transform: rotate(-0.5deg);
+  }
+
+  .tape-cyan {
+    background: linear-gradient(175deg, hsl(var(--press-cyan) / 0.36), hsl(var(--press-cyan) / 0.22));
+  }
+
+  .tape-magenta {
+    background: linear-gradient(175deg, hsl(var(--press-magenta) / 0.32), hsl(var(--press-magenta) / 0.2));
+  }
+
+  /* ---------------------------------------------------------------------
+     TOOL
+     The workhorse control: a small machined tile that sits proud of the
+     surface and physically sinks when engaged. Replaces every
+     "border + bg-accent" toggle in the old build.
+     --------------------------------------------------------------------- */
+  .tool {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.28rem;
+    padding: 0.5rem 0.4rem;
+    border-radius: 3px;
+    font-family: theme("fontFamily.sans");
+    font-size: 0.66rem;
+    font-weight: 500;
+    line-height: 1.15;
+    color: hsl(var(--ink-mid));
+    background: linear-gradient(180deg, hsl(var(--paper)), hsl(var(--paper-sunk)));
+    box-shadow:
+      0 1px 0 hsl(var(--lit) / 0.7) inset,
+      0 -1px 0 hsl(var(--cast) / 0.16) inset,
+      0 1px 2px hsl(var(--cast) / 0.24),
+      0 2px 5px -2px hsl(var(--cast) / 0.3);
+    transition: transform 90ms ease, box-shadow 90ms ease, color 120ms ease;
+  }
+
+  .tool:hover:not(:disabled) {
+    color: hsl(var(--ink));
+    transform: translateY(-1px);
+    box-shadow:
+      0 1px 0 hsl(var(--lit) / 0.8) inset,
+      0 2px 4px hsl(var(--cast) / 0.26),
+      0 6px 12px -4px hsl(var(--cast) / 0.32);
+  }
+
+  .tool:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .tool[data-on="true"] {
+    color: hsl(var(--paper));
+    background: linear-gradient(180deg, hsl(var(--press-red)), hsl(var(--press-red) / 0.86));
+    transform: translateY(1px);
+    box-shadow:
+      0 2px 6px hsl(var(--cast) / 0.45) inset,
+      0 -1px 0 hsl(var(--lit) / 0.25) inset,
+      0 1px 0 hsl(var(--lit) / 0.35);
+  }
+
+  .tool:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  /* Horizontal variant, for text-only choices. */
+  .tool-wide {
+    flex-direction: row;
+    gap: 0.4rem;
+    padding: 0.5rem 0.7rem;
+  }
+
+  /* ---------------------------------------------------------------------
+     STAMP
+     Export actions are rubber stamps: heavy, slightly rotated, they thud
+     down onto the page when pressed.
+     --------------------------------------------------------------------- */
+  .stamp {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.55rem 1.05rem;
+    border-radius: 2px;
+    font-family: theme("fontFamily.mono");
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: hsl(var(--press-red));
+    background: transparent;
+    box-shadow:
+      0 0 0 2px hsl(var(--press-red) / 0.85),
+      0 0 0 4px hsl(var(--paper));
+    transition: transform 80ms ease, box-shadow 80ms ease, color 80ms ease;
+  }
+
+  .stamp:hover:not(:disabled) {
+    transform: rotate(-1.2deg) scale(1.02);
+  }
+
+  .stamp:active:not(:disabled) {
+    transform: rotate(0deg) scale(0.97);
+    color: hsl(var(--paper));
+    background: hsl(var(--press-red));
+    box-shadow: 0 0 0 2px hsl(var(--press-red)), 0 0 0 4px hsl(var(--paper));
+  }
+
+  .stamp:disabled {
+    opacity: 0.4;
+    cursor: wait;
+  }
+
+  .stamp-ink {
+    color: hsl(var(--paper));
+    background: hsl(var(--ink));
+    box-shadow: 0 0 0 2px hsl(var(--ink)), 0 0 0 4px hsl(var(--paper));
+  }
+
+  .stamp-ink:active:not(:disabled) {
+    background: hsl(var(--ink));
+    box-shadow: 0 0 0 2px hsl(var(--ink)), 0 0 0 4px hsl(var(--paper));
+  }
+
+  /* ---------------------------------------------------------------------
+     FIELD
+     Text you set for the press. Cut into the paper rather than drawn on it,
+     monospaced because it is copy being composed, not prose.
+     --------------------------------------------------------------------- */
+  .field {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 0;
+    border-radius: 3px;
+    font-family: theme("fontFamily.mono");
+    font-size: 0.82rem;
+    line-height: 1.45;
+    color: hsl(var(--ink));
+    background: hsl(var(--paper-sunk));
+    box-shadow:
+      0 2px 4px hsl(var(--cast) / 0.26) inset,
+      0 -1px 0 hsl(var(--lit) / 0.35) inset,
+      0 1px 0 hsl(var(--lit) / 0.5);
+  }
+
+  .field::placeholder {
+    color: hsl(var(--ink-faint));
+  }
+
+  .field:focus-visible {
+    outline: 2px solid hsl(var(--press-red));
+    outline-offset: 1px;
+  }
+
+  .field:disabled {
+    opacity: 0.5;
+  }
+
+  /* ---------------------------------------------------------------------
+     PERFORATION
+     Sections are torn apart, not divided by a 1px line.
+     --------------------------------------------------------------------- */
+  .perf {
+    height: 1px;
+    border: 0;
+    background-image: radial-gradient(circle, hsl(var(--ink) / 0.3) 1px, transparent 1.4px);
+    background-size: 7px 1px;
+    background-repeat: repeat-x;
+  }
+
+  /* ---------------------------------------------------------------------
+     TYPE TREATMENTS
+     --------------------------------------------------------------------- */
+  .letterpress {
+    color: hsl(var(--ink));
+    text-shadow: 0 1px 0 hsl(var(--lit) / 0.6), 0 -1px 0 hsl(var(--cast) / 0.14);
+  }
+
+  .plate-title {
+    font-family: theme("fontFamily.display");
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 0.94;
+  }
+
+  .spec {
+    font-family: theme("fontFamily.mono");
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: hsl(var(--ink-faint));
+  }
+
+  /* ---------------------------------------------------------------------
+     REGISTRATION MARKS
+     The crosshairs a printer uses to align colour plates. Purely decorative,
+     and the single strongest signal that this is a press, not a dashboard.
+     --------------------------------------------------------------------- */
+  .reg-mark {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .reg-mark::before,
+  .reg-mark::after {
+    content: "";
+    position: absolute;
+    background: hsl(var(--ink) / 0.65);
+  }
+
+  .reg-mark::before {
+    left: 50%;
+    top: 0;
+    width: 1px;
+    height: 100%;
+    transform: translateX(-50%);
+  }
+
+  .reg-mark::after {
+    top: 50%;
+    left: 0;
+    height: 1px;
+    width: 100%;
+    transform: translateY(-50%);
+  }
+
+  /* The CMYK colour bar printers put in the trim area of every sheet. */
+  .colour-bar {
+    display: flex;
+    height: 6px;
+    width: 100%;
+    overflow: hidden;
+    border-radius: 1px;
+  }
+
+  .colour-bar > i {
+    flex: 1;
+    display: block;
   }
 }
 
 @layer utilities {
-  .glass-panel {
-    @apply bg-card/80 backdrop-blur-xl border border-border/50 shadow-lg;
-  }
-  
-  .glow-primary {
-    box-shadow: 0 0 20px -5px hsl(var(--primary) / 0.3);
+  /* Grain applied to an arbitrary surface (the desk rails, metal trays). */
+  .tex-grain {
+    position: relative;
   }
 
+  .tex-grain::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: var(--grain);
+    opacity: calc(var(--grain-opacity) * 0.7);
+    mix-blend-mode: var(--grain-blend);
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  /* Brushed-steel rail used for the toolbar and nav. */
+  .steel {
+    background:
+      linear-gradient(180deg, hsl(var(--paper)) 0%, hsl(var(--paper-sunk)) 52%, hsl(var(--paper-edge)) 100%);
+    box-shadow:
+      0 1px 0 hsl(var(--lit) / 0.7) inset,
+      0 -2px 6px -2px hsl(var(--cast) / 0.3) inset,
+      0 6px 16px -8px hsl(var(--cast) / 0.5);
+  }
+
+  /* Slight, deliberate imperfection. Nothing in a workshop is square. */
+  .askew-1 { transform: rotate(-0.65deg); }
+  .askew-2 { transform: rotate(0.9deg); }
+  .askew-3 { transform: rotate(-1.4deg); }
+
+  /* Old utilities kept so nothing that still references them breaks. */
   .panel-section {
-    @apply rounded-xl bg-card border border-border p-4;
+    @apply sheet p-4;
+  }
+
+  .glass-panel {
+    @apply sheet;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool,
+  .stamp {
+    transition: none;
+  }
+
+  .askew-1,
+  .askew-2,
+  .askew-3 {
+    transform: none;
   }
 }
