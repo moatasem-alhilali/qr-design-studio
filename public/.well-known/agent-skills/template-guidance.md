@@ -1,6 +1,6 @@
 # Template guidance
 
-Source URL: https://qr-design-dun.vercel.app/.well-known/agent-skills/template-guidance.md
+Source URL: https://qrcode.moatasem.dev/.well-known/agent-skills/template-guidance.md
 
 Goal: help users choose a public QR template category or style while keeping application actions under user control.
 
@@ -18,8 +18,8 @@ Goal: help users choose a public QR template category or style while keeping app
 
 ## Relevant Pages
 
-- https://qr-design-dun.vercel.app/templates
-- https://qr-design-dun.vercel.app/templates/index.md
+- https://qrcode.moatasem.dev/templates
+- https://qrcode.moatasem.dev/templates/index.md
 
 ## Safety Constraints
 

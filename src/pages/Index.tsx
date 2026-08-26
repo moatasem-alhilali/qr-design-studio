@@ -50,13 +50,14 @@ const Index = () => {
   return (
     <div className="mx-auto w-full max-w-[1560px] px-4 py-6">
       {/*
-        Two zones, the way a real bench is arranged: the press on the left with
-        the sheet currently being pulled, the tool bench on the right. The press
-        stays put while you work through the drawers.
+        Two zones, the way a real bench is arranged: the press holding the sheet
+        being pulled, and the tool bench beside it. The press stays put while you
+        work through the drawers. Column order follows the reading direction.
       */}
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_clamp(340px,32vw,440px)]">
         <motion.section
-          className="lg:sticky lg:top-[9.5rem]"
+          className="lg:sticky"
+          style={{ top: "calc(var(--rail-h, 150px) + 1rem)" }}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35 }}

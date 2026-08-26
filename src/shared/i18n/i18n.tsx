@@ -809,8 +809,11 @@ function getDirection(locale: Locale): Direction {
   return locale === "ar" ? "rtl" : "ltr";
 }
 
+/** Arabic is the product's default; English is opt-in. */
+const DEFAULT_LOCALE: Locale = "ar";
+
 function getInitialLocale(): Locale {
-  if (typeof window === "undefined") return "en";
+  if (typeof window === "undefined") return DEFAULT_LOCALE;
 
   try {
     const stored = localStorage.getItem(LOCALE_STORAGE_KEY);
@@ -819,7 +822,9 @@ function getInitialLocale(): Locale {
     // Keep language selection resilient when storage is unavailable.
   }
 
-  return navigator.language.toLowerCase().startsWith("ar") ? "ar" : "en";
+  // No browser sniffing: the site is Arabic first. English is something the
+  // visitor chooses, and that choice is what gets stored above.
+  return DEFAULT_LOCALE;
 }
 
 function persistLocale(locale: Locale): void {

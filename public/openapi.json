@@ -4,7 +4,7 @@
     "title": "QR Design Studio Public API",
     "version": "0.1.0",
     "description": "QR Design Studio currently exposes no public executable REST API. This document exists for honest agent discovery and will list only documented, safe public APIs if they are added later.",
-    "termsOfService": "https://qr-design-dun.vercel.app/llms.txt"
+    "termsOfService": "https://qrcode.moatasem.dev/llms.txt"
   },
   "servers": [
     {
@@ -14,7 +14,7 @@
   ],
   "externalDocs": {
     "description": "Agent-readable site guide",
-    "url": "https://qr-design-dun.vercel.app/llms.txt"
+    "url": "https://qrcode.moatasem.dev/llms.txt"
   },
   "paths": {},
   "tags": [],

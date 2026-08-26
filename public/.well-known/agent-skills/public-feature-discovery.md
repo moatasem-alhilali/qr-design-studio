@@ -1,6 +1,6 @@
 # Public feature discovery
 
-Source URL: https://qr-design-dun.vercel.app/.well-known/agent-skills/public-feature-discovery.md
+Source URL: https://qrcode.moatasem.dev/.well-known/agent-skills/public-feature-discovery.md
 
 Goal: help agents understand the public QR Design Studio surface without claiming unavailable backend or account features.
 
@@ -19,10 +19,10 @@ Goal: help agents understand the public QR Design Studio surface without claimin
 
 ## Relevant Pages
 
-- https://qr-design-dun.vercel.app/
-- https://qr-design-dun.vercel.app/templates
-- https://qr-design-dun.vercel.app/batch
-- https://qr-design-dun.vercel.app/settings
+- https://qrcode.moatasem.dev/
+- https://qrcode.moatasem.dev/templates
+- https://qrcode.moatasem.dev/batch
+- https://qrcode.moatasem.dev/settings
 
 ## Safety Constraints
 

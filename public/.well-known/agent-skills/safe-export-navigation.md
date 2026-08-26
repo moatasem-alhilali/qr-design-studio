@@ -1,6 +1,6 @@
 # Safe export navigation
 
-Source URL: https://qr-design-dun.vercel.app/.well-known/agent-skills/safe-export-navigation.md
+Source URL: https://qrcode.moatasem.dev/.well-known/agent-skills/safe-export-navigation.md
 
 Goal: guide users through QR and barcode export options without taking control of downloads.
 
@@ -19,8 +19,8 @@ Goal: guide users through QR and barcode export options without taking control o
 
 ## Relevant Pages
 
-- https://qr-design-dun.vercel.app/
-- https://qr-design-dun.vercel.app/batch
+- https://qrcode.moatasem.dev/
+- https://qrcode.moatasem.dev/batch
 
 ## Safety Constraints
 

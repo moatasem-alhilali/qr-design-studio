@@ -1,14 +1,14 @@
 # Settings And About
 
-Source URL: https://qr-design-dun.vercel.app/settings
+Source URL: https://qrcode.moatasem.dev/settings
 
 Description: Public local settings/about page describing the current build: static QR and barcode generation without Firebase, authentication, cloud sync, dynamic redirects, or analytics.
 
 ## Important Links
 
-- Home designer: https://qr-design-dun.vercel.app/
-- Agent guide: https://qr-design-dun.vercel.app/llms.txt
-- OpenAPI: https://qr-design-dun.vercel.app/openapi.json
+- Home designer: https://qrcode.moatasem.dev/
+- Agent guide: https://qrcode.moatasem.dev/llms.txt
+- OpenAPI: https://qrcode.moatasem.dev/openapi.json
 
 ## Current Build Notes
 

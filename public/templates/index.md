@@ -1,15 +1,15 @@
 # QR Templates
 
-Source URL: https://qr-design-dun.vercel.app/templates
+Source URL: https://qrcode.moatasem.dev/templates
 
 Description: Public page for browsing ready-made QR templates by category and applying them inside the visible QR designer.
 
 ## Important Links
 
-- Home designer: https://qr-design-dun.vercel.app/
-- Batch Generator: https://qr-design-dun.vercel.app/batch
-- Agent guide: https://qr-design-dun.vercel.app/llms.txt
-- Template guidance skill: https://qr-design-dun.vercel.app/.well-known/agent-skills/template-guidance.md
+- Home designer: https://qrcode.moatasem.dev/
+- Batch Generator: https://qrcode.moatasem.dev/batch
+- Agent guide: https://qrcode.moatasem.dev/llms.txt
+- Template guidance skill: https://qrcode.moatasem.dev/.well-known/agent-skills/template-guidance.md
 
 ## Public Capabilities
 

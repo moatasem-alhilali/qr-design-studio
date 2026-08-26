@@ -24,7 +24,7 @@ export interface QRConfig {
 }
 
 export const defaultConfig: QRConfig = {
-  data: "https://qr-design-dun.vercel.app/",
+  data: "https://qrcode.moatasem.dev/",
   dataType: "url",
   moduleStyle: "rounded",
   cornerStyle: "rounded",
@@ -54,7 +54,7 @@ const TARGET_EXPORT_PX = 2400;
 
 function formatData(config: QRConfig): string {
   const { data, dataType } = config;
-  if (!data) return "https://qr-design-dun.vercel.app/";
+  if (!data) return "https://qrcode.moatasem.dev/";
   switch (dataType) {
     case "wifi":
       return `WIFI:T:WPA;S:${data};P:password;;`;

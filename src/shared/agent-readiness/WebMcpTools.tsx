@@ -33,7 +33,7 @@ declare global {
   }
 }
 
-const SITE_URL = "https://qr-design-dun.vercel.app";
+const SITE_URL = "https://qrcode.moatasem.dev";
 
 const readOnlyAnnotations = {
   readOnlyHint: true,

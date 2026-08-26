@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <a href="https://qr-design-dun.vercel.app/">Live Demo</a> •
+  <a href="https://qrcode.moatasem.dev/">Live Demo</a> •
   <a href="https://github.com/moatasem-alhilali">GitHub</a> •
   <a href="#preview-gallery">Preview</a> •
   <a href="#features">Features</a> •
@@ -26,7 +26,7 @@ QR Design Studio is a `Vite + React + TypeScript` application for building profe
 
 ## Demo
 
-- Live Demo: https://qr-design-dun.vercel.app/
+- Live Demo: https://qrcode.moatasem.dev/
 
 ## Preview Gallery
 

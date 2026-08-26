@@ -93,10 +93,10 @@
     }
   ],
   "resources": {
-    "llms": "https://qr-design-dun.vercel.app/llms.txt",
-    "apiCatalog": "https://qr-design-dun.vercel.app/.well-known/api-catalog",
-    "openApi": "https://qr-design-dun.vercel.app/openapi.json",
-    "agentSkills": "https://qr-design-dun.vercel.app/.well-known/agent-skills/index.json"
+    "llms": "https://qrcode.moatasem.dev/llms.txt",
+    "apiCatalog": "https://qrcode.moatasem.dev/.well-known/api-catalog",
+    "openApi": "https://qrcode.moatasem.dev/openapi.json",
+    "agentSkills": "https://qrcode.moatasem.dev/.well-known/agent-skills/index.json"
   },
   "safety": [
     "Read-only discovery only.",

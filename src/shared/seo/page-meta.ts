@@ -1,6 +1,9 @@
-const siteUrl = "https://qr-design-dun.vercel.app";
+const siteUrl = "https://qrcode.moatasem.dev";
 const defaultImage = `${siteUrl}/screenshots/banner.png`;
 type Locale = "en" | "ar";
+
+/** Matches the app default in `shared/i18n`. */
+const DEFAULT_LOCALE: Locale = "ar";
 
 interface PageMeta {
   title: string;
@@ -68,7 +71,7 @@ const pageMeta: Record<Locale, Record<"home" | "templates" | "batch" | "settings
   },
 };
 
-export function getPageMeta(pathname: string, locale: Locale = "en"): PageMeta {
+export function getPageMeta(pathname: string, locale: Locale = DEFAULT_LOCALE): PageMeta {
   if (pathname.startsWith("/templates")) {
     return pageMeta[locale].templates;
   }
@@ -84,7 +87,7 @@ export function getPageMeta(pathname: string, locale: Locale = "en"): PageMeta {
   return pageMeta[locale].home;
 }
 
-export function applyPageMeta(pathname: string, locale: Locale = "en") {
+export function applyPageMeta(pathname: string, locale: Locale = DEFAULT_LOCALE) {
   const meta = getPageMeta(pathname, locale);
   const pageUrl = `${siteUrl}${pathname}`;
 

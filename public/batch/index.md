@@ -1,14 +1,14 @@
 # Batch QR Generator
 
-Source URL: https://qr-design-dun.vercel.app/batch
+Source URL: https://qrcode.moatasem.dev/batch
 
 Description: Public page for generating multiple static QR codes locally from pasted rows or CSV files and downloading them as a ZIP archive.
 
 ## Important Links
 
-- Home designer: https://qr-design-dun.vercel.app/
-- Templates: https://qr-design-dun.vercel.app/templates
-- Batch guidance skill: https://qr-design-dun.vercel.app/.well-known/agent-skills/batch-guidance.md
+- Home designer: https://qrcode.moatasem.dev/
+- Templates: https://qrcode.moatasem.dev/templates
+- Batch guidance skill: https://qrcode.moatasem.dev/.well-known/agent-skills/batch-guidance.md
 
 ## Public Capabilities
 

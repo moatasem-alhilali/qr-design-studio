@@ -1,18 +1,18 @@
 # QR Design Studio
 
-Source URL: https://qr-design-dun.vercel.app/
+Source URL: https://qrcode.moatasem.dev/
 
 Description: Create styled static QR codes and barcodes in the browser with data inputs, visual styling, frames, presets, scan reliability guidance, and local PNG/SVG/PDF export controls.
 
 ## Important Links
 
-- Templates: https://qr-design-dun.vercel.app/templates
-- Batch Generator: https://qr-design-dun.vercel.app/batch
-- Settings/About: https://qr-design-dun.vercel.app/settings
-- llms.txt: https://qr-design-dun.vercel.app/llms.txt
-- API catalog: https://qr-design-dun.vercel.app/.well-known/api-catalog
-- OpenAPI: https://qr-design-dun.vercel.app/openapi.json
-- Agent skills: https://qr-design-dun.vercel.app/.well-known/agent-skills/index.json
+- Templates: https://qrcode.moatasem.dev/templates
+- Batch Generator: https://qrcode.moatasem.dev/batch
+- Settings/About: https://qrcode.moatasem.dev/settings
+- llms.txt: https://qrcode.moatasem.dev/llms.txt
+- API catalog: https://qrcode.moatasem.dev/.well-known/api-catalog
+- OpenAPI: https://qrcode.moatasem.dev/openapi.json
+- Agent skills: https://qrcode.moatasem.dev/.well-known/agent-skills/index.json
 
 ## Public Capabilities
 

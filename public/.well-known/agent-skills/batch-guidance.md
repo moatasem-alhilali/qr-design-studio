@@ -1,6 +1,6 @@
 # Batch generation guidance
 
-Source URL: https://qr-design-dun.vercel.app/.well-known/agent-skills/batch-guidance.md
+Source URL: https://qrcode.moatasem.dev/.well-known/agent-skills/batch-guidance.md
 
 Goal: explain the local batch QR workflow safely.
 
@@ -19,8 +19,8 @@ Goal: explain the local batch QR workflow safely.
 
 ## Relevant Pages
 
-- https://qr-design-dun.vercel.app/batch
-- https://qr-design-dun.vercel.app/batch/index.md
+- https://qrcode.moatasem.dev/batch
+- https://qrcode.moatasem.dev/batch/index.md
 
 ## Safety Constraints
 

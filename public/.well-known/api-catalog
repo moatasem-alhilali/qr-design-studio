@@ -1,61 +1,61 @@
 {
   "linkset": [
     {
-      "anchor": "https://qr-design-dun.vercel.app/.well-known/api-catalog",
+      "anchor": "https://qrcode.moatasem.dev/.well-known/api-catalog",
       "item": [
         {
-          "href": "https://qr-design-dun.vercel.app/",
+          "href": "https://qrcode.moatasem.dev/",
           "type": "text/html",
           "title": "QR Design Studio public web app"
         }
       ],
       "service-desc": [
         {
-          "href": "https://qr-design-dun.vercel.app/openapi.json",
+          "href": "https://qrcode.moatasem.dev/openapi.json",
           "type": "application/vnd.oai.openapi+json",
           "title": "OpenAPI discovery document with no executable paths"
         },
         {
-          "href": "https://qr-design-dun.vercel.app/.well-known/mcp/server-card.json",
+          "href": "https://qrcode.moatasem.dev/.well-known/mcp/server-card.json",
           "type": "application/json",
           "title": "MCP server card for HTTPS discovery-only capabilities"
         }
       ],
       "service-doc": [
         {
-          "href": "https://qr-design-dun.vercel.app/llms.txt",
+          "href": "https://qrcode.moatasem.dev/llms.txt",
           "type": "text/plain",
           "title": "LLM and agent guidance"
         },
         {
-          "href": "https://qr-design-dun.vercel.app/.well-known/agent-skills/index.json",
+          "href": "https://qrcode.moatasem.dev/.well-known/agent-skills/index.json",
           "type": "application/json",
           "title": "Agent skills index"
         },
         {
-          "href": "https://qr-design-dun.vercel.app/sitemap.xml",
+          "href": "https://qrcode.moatasem.dev/sitemap.xml",
           "type": "application/xml",
           "title": "Public sitemap"
         }
       ],
       "alternate": [
         {
-          "href": "https://qr-design-dun.vercel.app/index.md",
+          "href": "https://qrcode.moatasem.dev/index.md",
           "type": "text/markdown",
           "title": "Home Markdown"
         },
         {
-          "href": "https://qr-design-dun.vercel.app/templates/index.md",
+          "href": "https://qrcode.moatasem.dev/templates/index.md",
           "type": "text/markdown",
           "title": "Templates Markdown"
         },
         {
-          "href": "https://qr-design-dun.vercel.app/batch/index.md",
+          "href": "https://qrcode.moatasem.dev/batch/index.md",
           "type": "text/markdown",
           "title": "Batch Generator Markdown"
         },
         {
-          "href": "https://qr-design-dun.vercel.app/settings/index.md",
+          "href": "https://qrcode.moatasem.dev/settings/index.md",
           "type": "text/markdown",
           "title": "Settings Markdown"
         }

@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Github, Languages, Layers, Moon, PlusCircle, Settings, Sparkles, Sun } from "lucide-react";
 
@@ -19,10 +19,31 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { direction, locale, t, toggleLocale } = useI18n();
   const { shift, toggleShift } = useShift();
+  const railRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     applyPageMeta(location.pathname, locale);
   }, [locale, location.pathname]);
+
+  /*
+    The masthead is sticky and its height changes with viewport and language,
+    so anything else that wants to stick below it reads the real measurement
+    instead of guessing at a magic offset.
+  */
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail) return;
+
+    const publishHeight = () => {
+      document.documentElement.style.setProperty("--rail-h", `${rail.offsetHeight}px`);
+    };
+
+    publishHeight();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(publishHeight);
+    observer.observe(rail);
+    return () => observer.disconnect();
+  }, []);
 
   const isNight = shift === "night";
 
@@ -33,17 +54,17 @@ export function AppLayout({ children }: { children: ReactNode }) {
         the shop name cut in heavy type, the CMYK control strip beneath it, and
         the sections presented as numbered drawers rather than sidebar links.
       */}
-      <header className="sticky top-0 z-50 steel tex-grain">
+      <header ref={railRef} className="sticky top-0 z-50 steel tex-grain">
         <div className="mx-auto w-full max-w-[1560px] px-4">
-          <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3 pb-2 pt-3">
+          <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2 pb-2 pt-2 sm:pt-3">
             <Link to="/" className="group flex items-end gap-3">
               <span
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-[3px] bg-ink text-paper"
+                className="grid h-9 w-9 shrink-0 place-items-center rounded-[3px] bg-ink text-paper sm:h-11 sm:w-11"
                 style={{ boxShadow: "0 2px 0 hsl(var(--cast) / 0.4), 0 6px 12px -6px hsl(var(--cast) / 0.6)" }}
                 aria-hidden
               >
                 {/* A composing-stick glyph: four modules of a QR finder */}
-                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="currentColor">
+                <svg viewBox="0 0 24 24" className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor">
                   <rect x="2" y="2" width="8" height="8" rx="1" />
                   <rect x="14" y="2" width="8" height="8" rx="1" />
                   <rect x="2" y="14" width="8" height="8" rx="1" />
@@ -52,10 +73,10 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 </svg>
               </span>
               <span className="leading-none">
-                <span className="plate-title letterpress block text-[1.6rem] sm:text-[2rem]">
+                <span className="plate-title letterpress block text-[1.3rem] sm:text-[2rem]">
                   {t.appName}
                 </span>
-                <span className="spec mt-1 block">{t.layout.tagline}</span>
+                <span className="spec mt-1 hidden sm:block">{t.layout.tagline}</span>
               </span>
             </Link>
 
@@ -84,7 +105,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <ColourBar className="opacity-80" />
 
           {/* Drawer fronts. The open one is pulled forward out of the rail. */}
-          <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto pt-2" aria-label={t.appName}>
+          <nav className="-mb-px flex items-stretch gap-1 overflow-x-auto pt-1.5 sm:pt-2" aria-label={t.appName}>
             {navItems.map((item) => {
               const active = location.pathname === item.path;
               return (
@@ -93,7 +114,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                   to={item.path}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "group relative flex shrink-0 items-center gap-2 rounded-t-[4px] px-3.5 py-2.5 text-sm font-medium transition-all",
+                    "group relative flex shrink-0 items-center gap-2 rounded-t-[4px] px-3 py-2 text-[0.82rem] font-medium transition-all sm:px-3.5 sm:py-2.5 sm:text-sm",
                     active
                       ? "bg-paper text-ink"
                       : "text-ink-mid hover:bg-paper/55 hover:text-ink",
