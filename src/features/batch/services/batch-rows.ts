@@ -1,6 +1,6 @@
 import JSZip from "jszip";
 
-import { defaultConfig, generateQRMatrix, QRConfig, renderQRToCanvas } from "@/lib/qr-engine";
+import { createHighResQRCanvas, defaultConfig, QRConfig } from "@/lib/qr-engine";
 import type { BatchItem } from "@/lib/types";
 
 export function createBatchRow(data = "", label = ""): BatchItem {
@@ -49,7 +49,6 @@ export async function generateBatchZip(
   onRowUpdate: (id: string, updates: Partial<BatchItem>) => void,
 ): Promise<Blob> {
   const zip = new JSZip();
-  const canvas = document.createElement("canvas");
 
   for (let index = 0; index < rows.length; index++) {
     const row = rows[index];
@@ -60,8 +59,8 @@ export async function generateBatchZip(
 
     try {
       const config: QRConfig = { ...defaultConfig, data: row.data };
-      const matrix = generateQRMatrix(config);
-      renderQRToCanvas(canvas, matrix, config);
+      // Print-resolution bitmap, with any logo fully painted before encoding.
+      const canvas = await createHighResQRCanvas(config);
       zip.file(filenameFor(row, index), await canvasToBlob(canvas));
       onRowUpdate(row.id, { status: "completed" });
     } catch {

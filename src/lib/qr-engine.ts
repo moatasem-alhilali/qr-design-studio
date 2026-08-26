@@ -40,6 +40,18 @@ export const defaultConfig: QRConfig = {
   errorCorrection: "H",
 };
 
+/**
+ * Rendering resolution policy.
+ *
+ * `config.size` is the *logical* design size. Bitmaps are always rasterized at
+ * an integer multiple of that size, and every module is snapped to a whole
+ * number of device pixels, so module edges stay hard instead of grey and
+ * smeared by fractional cell widths.
+ */
+const MAX_PREVIEW_CANVAS_PX = 1600;
+const MAX_EXPORT_CANVAS_PX = 8192;
+const TARGET_EXPORT_PX = 2400;
+
 function formatData(config: QRConfig): string {
   const { data, dataType } = config;
   if (!data) return "https://qr-design-dun.vercel.app/";
@@ -65,10 +77,10 @@ export interface QRMatrix {
 }
 
 export function generateQRMatrix(config: QRConfig): QRMatrix {
-  const ecl = config.logoUrl ? "H" : config.errorCorrection;
-  const eclMap = { L: 1, M: 0, Q: 3, H: 2 } as const;
-  const qr = qrcode(0, (["L", "M", "Q", "H"] as const).indexOf(ecl) >= 0 ? (["L", "M", "Q", "H"][eclMap[ecl]] as "L" | "M" | "Q" | "H") : "H");
-  
+  // A logo always covers modules, so force the highest error correction level.
+  const ecl: QRConfig["errorCorrection"] = config.logoUrl ? "H" : config.errorCorrection;
+  const qr = qrcode(0, ecl);
+
   const formattedData = formatData(config);
   qr.addData(formattedData);
   qr.make();
@@ -83,6 +95,34 @@ export function generateQRMatrix(config: QRConfig): QRMatrix {
     modules.push(row);
   }
   return { modules, size: moduleCount };
+}
+
+export interface QRPixelMetrics {
+  /** Width/height of one module in device pixels. Always an integer. */
+  cellSize: number;
+  /** Width/height of the rasterized bitmap in device pixels. */
+  canvasSize: number;
+}
+
+export function getQRPixelMetrics(moduleCount: number, logicalSize: number, pixelRatio: number): QRPixelMetrics {
+  const target = Math.max(1, logicalSize) * Math.max(1, pixelRatio);
+  const cellSize = Math.max(1, Math.round(target / Math.max(1, moduleCount)));
+  return { cellSize, canvasSize: cellSize * moduleCount };
+}
+
+export function getPreviewPixelRatio(logicalSize: number): number {
+  const size = Math.max(1, logicalSize);
+  const dpr = typeof window !== "undefined" && window.devicePixelRatio ? window.devicePixelRatio : 1;
+  const desired = Math.min(4, Math.max(2, Math.ceil(dpr * 1.5)));
+  const maxRatio = Math.max(1, Math.floor(MAX_PREVIEW_CANVAS_PX / size));
+  return Math.max(1, Math.min(desired, maxRatio));
+}
+
+export function getExportPixelRatio(logicalSize: number): number {
+  const size = Math.max(1, logicalSize);
+  const desired = Math.max(3, Math.ceil(TARGET_EXPORT_PX / size));
+  const maxRatio = Math.max(1, Math.floor(MAX_EXPORT_CANVAS_PX / size));
+  return Math.max(1, Math.min(desired, maxRatio));
 }
 
 function isFinderPattern(row: number, col: number, size: number): boolean {
@@ -126,19 +166,64 @@ function isFinderPatternInner(row: number, col: number, size: number): boolean {
   return false;
 }
 
+/**
+ * Decoded logos are cached so a render that already has the bitmap can finish
+ * synchronously. Without this, exports fire before `img.onload` and the logo is
+ * missing from the exported file even though the preview shows it.
+ */
+const logoImageCache = new Map<string, HTMLImageElement>();
+
+function getCachedLogo(url: string): HTMLImageElement | null {
+  const cached = logoImageCache.get(url);
+  if (cached && cached.complete && cached.naturalWidth > 0) return cached;
+  return null;
+}
+
+export function loadLogoImage(url: string): Promise<HTMLImageElement> {
+  const cached = getCachedLogo(url);
+  if (cached) return Promise.resolve(cached);
+
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    // Remote logos need CORS to keep the canvas untainted; data URLs never do.
+    if (!url.startsWith("data:")) img.crossOrigin = "anonymous";
+    img.onload = () => {
+      logoImageCache.set(url, img);
+      resolve(img);
+    };
+    img.onerror = () => reject(new Error("Logo failed to load"));
+    img.src = url;
+  });
+}
+
+export interface QRRenderOptions {
+  /** Multiplies `config.size` to produce the bitmap resolution. */
+  pixelRatio?: number;
+  /** Already-decoded logo. When omitted the cache is consulted. */
+  logoImage?: HTMLImageElement | null;
+  /** Called once an asynchronously loaded logo has been drawn. */
+  onLogoReady?: () => void;
+}
+
 export function renderQRToCanvas(
   canvas: HTMLCanvasElement,
   matrix: QRMatrix,
-  config: QRConfig
+  config: QRConfig,
+  options: QRRenderOptions = {}
 ): void {
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
 
   const { size: moduleCount, modules } = matrix;
-  const canvasSize = config.size;
+  const pixelRatio = options.pixelRatio ?? getPreviewPixelRatio(config.size);
+  const { cellSize, canvasSize } = getQRPixelMetrics(moduleCount, config.size, pixelRatio);
+
   canvas.width = canvasSize;
   canvas.height = canvasSize;
-  const cellSize = canvasSize / moduleCount;
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
 
   // Background
   if (config.transparentBg) {
@@ -170,13 +255,14 @@ export function renderQRToCanvas(
   for (let row = 0; row < moduleCount; row++) {
     for (let col = 0; col < moduleCount; col++) {
       if (!modules[row][col]) continue;
-      
+
       const x = col * cellSize;
       const y = row * cellSize;
 
       if (isFinderPattern(row, col, moduleCount)) {
         drawFinderModule(ctx, x, y, cellSize, row, col, moduleCount, config, fillStyle);
       } else {
+        ctx.fillStyle = fillStyle;
         drawModule(ctx, x, y, cellSize, config.moduleStyle);
       }
     }
@@ -184,23 +270,100 @@ export function renderQRToCanvas(
 
   // Draw logo
   if (config.logoUrl) {
-    const logoSize = canvasSize * config.logoScale;
-    const logoX = (canvasSize - logoSize) / 2;
-    const logoY = (canvasSize - logoSize) / 2;
-    
-    // White background behind logo
-    const pad = logoSize * 0.15;
-    ctx.fillStyle = config.transparentBg ? "rgba(255,255,255,0.95)" : config.bgColor;
-    roundRect(ctx, logoX - pad, logoY - pad, logoSize + pad * 2, logoSize + pad * 2, cellSize * 2);
-    ctx.fill();
-    
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      ctx.drawImage(img, logoX, logoY, logoSize, logoSize);
-    };
-    img.src = config.logoUrl;
+    const logoUrl = config.logoUrl;
+    const ready = options.logoImage ?? getCachedLogo(logoUrl);
+
+    drawLogoPlate(ctx, canvasSize, cellSize, config);
+
+    if (ready) {
+      drawLogoImage(ctx, canvasSize, config, ready);
+    } else {
+      // Preview path: repaint the logo as soon as the bitmap is available.
+      loadLogoImage(logoUrl)
+        .then((img) => {
+          if (canvas.width !== canvasSize || config.logoUrl !== logoUrl) return;
+          drawLogoPlate(ctx, canvasSize, cellSize, config);
+          drawLogoImage(ctx, canvasSize, config, img);
+          options.onLogoReady?.();
+        })
+        .catch(() => {
+          // Broken logo: leave the plate, the QR itself is still valid.
+        });
+    }
   }
+}
+
+/**
+ * Renders and resolves only once the logo is actually painted. Every export
+ * path must use this — the synchronous variant can return before the logo
+ * bitmap exists, which is what left a blank white square in exported PDFs.
+ */
+export async function renderQRToCanvasAsync(
+  canvas: HTMLCanvasElement,
+  matrix: QRMatrix,
+  config: QRConfig,
+  options: QRRenderOptions = {}
+): Promise<void> {
+  let logoImage = options.logoImage ?? null;
+  if (config.logoUrl && !logoImage) {
+    try {
+      logoImage = await loadLogoImage(config.logoUrl);
+    } catch {
+      logoImage = null;
+    }
+  }
+  renderQRToCanvas(canvas, matrix, config, { ...options, logoImage });
+}
+
+function getLogoBox(canvasSize: number, config: QRConfig) {
+  const logoSize = canvasSize * config.logoScale;
+  return {
+    logoSize,
+    logoX: (canvasSize - logoSize) / 2,
+    logoY: (canvasSize - logoSize) / 2,
+  };
+}
+
+function drawLogoPlate(
+  ctx: CanvasRenderingContext2D,
+  canvasSize: number,
+  cellSize: number,
+  config: QRConfig
+): void {
+  const { logoSize, logoX, logoY } = getLogoBox(canvasSize, config);
+  const pad = logoSize * 0.15;
+  ctx.save();
+  ctx.fillStyle = config.transparentBg ? "rgba(255,255,255,0.95)" : config.bgColor;
+  roundRect(ctx, logoX - pad, logoY - pad, logoSize + pad * 2, logoSize + pad * 2, cellSize * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawLogoImage(
+  ctx: CanvasRenderingContext2D,
+  canvasSize: number,
+  config: QRConfig,
+  img: HTMLImageElement
+): void {
+  const { logoSize, logoX, logoY } = getLogoBox(canvasSize, config);
+  const naturalWidth = img.naturalWidth || logoSize;
+  const naturalHeight = img.naturalHeight || logoSize;
+  // Fit inside the box without distorting non-square logos.
+  const scale = Math.min(logoSize / naturalWidth, logoSize / naturalHeight);
+  const drawWidth = naturalWidth * scale;
+  const drawHeight = naturalHeight * scale;
+
+  ctx.save();
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(
+    img,
+    logoX + (logoSize - drawWidth) / 2,
+    logoY + (logoSize - drawHeight) / 2,
+    drawWidth,
+    drawHeight
+  );
+  ctx.restore();
 }
 
 function drawModule(
@@ -210,7 +373,8 @@ function drawModule(
   size: number,
   style: ModuleStyle
 ): void {
-  const gap = size * 0.1;
+  // Snap the inter-module gap to whole pixels so square modules stay crisp.
+  const gap = size >= 10 ? Math.round(size * 0.1) : size * 0.1;
   const s = size - gap;
   const offset = gap / 2;
 
@@ -285,13 +449,13 @@ function drawFinderModule(
   fillStyle: string | CanvasGradient
 ): void {
   const style = config.cornerStyle;
-  
+
   // For decorative corners, draw the whole finder pattern at once
   // For others, draw cell by cell with corner styling
-  const gap = cellSize * 0.05;
+  const gap = cellSize >= 20 ? Math.round(cellSize * 0.05) : cellSize * 0.05;
   const s = cellSize - gap;
   const offset = gap / 2;
-  
+
   ctx.fillStyle = fillStyle;
 
   switch (style) {
@@ -410,6 +574,17 @@ function roundRect(
   ctx.closePath();
 }
 
+/** Builds an offscreen, print-resolution bitmap with the logo already painted. */
+export async function createHighResQRCanvas(
+  config: QRConfig,
+  pixelRatio = getExportPixelRatio(config.size)
+): Promise<HTMLCanvasElement> {
+  const matrix = generateQRMatrix(config);
+  const canvas = document.createElement("canvas");
+  await renderQRToCanvasAsync(canvas, matrix, config, { pixelRatio });
+  return canvas;
+}
+
 export function exportCanvasAsPNG(canvas: HTMLCanvasElement, filename = "qrcode.png"): void {
   const link = document.createElement("a");
   link.download = filename;
@@ -417,10 +592,22 @@ export function exportCanvasAsPNG(canvas: HTMLCanvasElement, filename = "qrcode.
   link.click();
 }
 
-export function exportCanvasAsPDF(canvas: HTMLCanvasElement, filename = "qrcode.pdf"): void {
+export interface PDFExportOptions {
+  /** Page size in CSS pixels. Defaults to the bitmap size (1:1 at 96 DPI). */
+  logicalWidth?: number;
+  logicalHeight?: number;
+}
+
+export function exportCanvasAsPDF(
+  canvas: HTMLCanvasElement,
+  filename = "qrcode.pdf",
+  options: PDFExportOptions = {}
+): void {
   const pxToPt = 72 / 96;
-  const pageWidth = canvas.width * pxToPt;
-  const pageHeight = canvas.height * pxToPt;
+  const logicalWidth = options.logicalWidth ?? canvas.width;
+  const logicalHeight = options.logicalHeight ?? canvas.height;
+  const pageWidth = logicalWidth * pxToPt;
+  const pageHeight = logicalHeight * pxToPt;
 
   const pdf = new jsPDF({
     orientation: pageWidth >= pageHeight ? "landscape" : "portrait",
@@ -429,6 +616,8 @@ export function exportCanvasAsPDF(canvas: HTMLCanvasElement, filename = "qrcode.
     compress: true,
   });
 
+  // The bitmap is several times larger than the page box, so the embedded
+  // image keeps a high effective DPI instead of being a screen-resolution scan.
   pdf.addImage(canvas.toDataURL("image/png"), "PNG", 0, 0, pageWidth, pageHeight, undefined, "FAST");
   pdf.save(filename);
 }
@@ -436,8 +625,8 @@ export function exportCanvasAsPDF(canvas: HTMLCanvasElement, filename = "qrcode.
 export function exportCanvasAsSVG(matrix: QRMatrix, config: QRConfig): string {
   const { size: moduleCount, modules } = matrix;
   const cellSize = config.size / moduleCount;
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${config.size} ${config.size}" width="${config.size}" height="${config.size}">`;
-  
+  let svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 ${config.size} ${config.size}" width="${config.size}" height="${config.size}">`;
+
   if (!config.transparentBg) {
     svg += `<rect width="${config.size}" height="${config.size}" fill="${config.bgColor}"/>`;
   }
@@ -480,7 +669,6 @@ export function exportCanvasAsSVG(matrix: QRMatrix, config: QRConfig): string {
         case "diamond": {
           const cx = x + cellSize / 2;
           const cy = y + cellSize / 2;
-          const hs = s / 2;
           svg += `<polygon points="${cx},${y + offset} ${x + cellSize - offset},${cy} ${cx},${y + cellSize - offset} ${x + offset},${cy}" fill="${fill}"/>`;
           break;
         }
@@ -505,8 +693,27 @@ export function exportCanvasAsSVG(matrix: QRMatrix, config: QRConfig): string {
     }
   }
 
+  if (config.logoUrl) {
+    const logoSize = config.size * config.logoScale;
+    const logoX = (config.size - logoSize) / 2;
+    const logoY = (config.size - logoSize) / 2;
+    const pad = logoSize * 0.15;
+    const plateColor = config.transparentBg ? "rgba(255,255,255,0.95)" : config.bgColor;
+    const href = escapeXmlAttr(config.logoUrl);
+    svg += `<rect x="${logoX - pad}" y="${logoY - pad}" width="${logoSize + pad * 2}" height="${logoSize + pad * 2}" rx="${cellSize * 2}" fill="${plateColor}"/>`;
+    svg += `<image x="${logoX}" y="${logoY}" width="${logoSize}" height="${logoSize}" preserveAspectRatio="xMidYMid meet" href="${href}" xlink:href="${href}"/>`;
+  }
+
   svg += "</svg>";
   return svg;
+}
+
+function escapeXmlAttr(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 export function downloadSVG(svgString: string, filename = "qrcode.svg"): void {

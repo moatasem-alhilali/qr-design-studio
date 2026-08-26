@@ -58,7 +58,7 @@ export function BarcodePreview({ config, frame }: BarcodePreviewProps) {
 
     if (hasFrame && frame) {
       const exportCanvas = document.createElement("canvas");
-      renderFramedCanvas(exportCanvas, sourceCanvas, scaleFrameConfig(frame, scale));
+      renderFramedCanvas(exportCanvas, sourceCanvas, scaleFrameConfig(frame, scale), scale);
       return exportCanvas;
     }
 

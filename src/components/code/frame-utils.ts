@@ -78,17 +78,23 @@ export function scaleFrameConfig(frame: FrameConfig, scale: number): FrameConfig
   };
 }
 
-export function getFrameMetrics(frame: FrameConfig, contentWidth: number, contentHeight: number): FrameMetrics {
+/**
+ * `scale` covers the layout constants that are not part of FrameConfig. When a
+ * frame is composited onto a high-resolution export bitmap, `scaleFrameConfig`
+ * grows the configurable values and this grows the fixed ones, so the exported
+ * frame keeps the same proportions as the on-screen preview.
+ */
+export function getFrameMetrics(frame: FrameConfig, contentWidth: number, contentHeight: number, scale = 1): FrameMetrics {
   const outerPadding = frame.padding;
-  const panelPadding = 12;
-  const gap = 10;
+  const panelPadding = 12 * scale;
+  const gap = 10 * scale;
   const showAccentBar = frame.type !== "minimal";
   const type = getTypography(frame);
 
-  const badgeHeight = frame.badgeText ? Math.max(28, type.badgeSize + 12) : 0;
+  const badgeHeight = frame.badgeText ? Math.max(28 * scale, type.badgeSize + 12 * scale) : 0;
   const topTextHeight = frame.textTop ? Math.ceil(type.topSize * 1.35) : 0;
   const bottomTextHeight = frame.textBottom ? Math.ceil(type.bottomSize * 1.35) : 0;
-  const accentHeight = showAccentBar ? 4 : 0;
+  const accentHeight = showAccentBar ? 4 * scale : 0;
   const accentBlock = showAccentBar ? accentHeight + gap : 0;
   const badgeBlock = badgeHeight ? badgeHeight + gap : 0;
   const topTextBlock = topTextHeight ? topTextHeight + gap : 0;
@@ -113,9 +119,9 @@ export function getFrameMetrics(frame: FrameConfig, contentWidth: number, conten
   const contentX = panelX + panelPadding;
   const contentY = panelY + panelPadding;
   const bottomTextY = panelY + panelHeight + gap;
-  const accentWidth = Math.min(panelWidth * 0.4, 120);
+  const accentWidth = Math.min(panelWidth * 0.4, 120 * scale);
   const accentX = (width - accentWidth) / 2;
-  const panelRadius = Math.max(16, frame.cornerRadius - 10);
+  const panelRadius = Math.max(16 * scale, frame.cornerRadius - 10 * scale);
 
   return {
     width,
@@ -140,23 +146,30 @@ export function getFrameMetrics(frame: FrameConfig, contentWidth: number, conten
   };
 }
 
-function getBadgeWidth(frame: FrameConfig) {
+function getBadgeWidth(frame: FrameConfig, scale = 1) {
   const { badgeSize } = getTypography(frame);
-  return Math.max(92, frame.badgeText.length * (badgeSize * 0.62) + 28);
+  return Math.max(92 * scale, frame.badgeText.length * (badgeSize * 0.62) + 28 * scale);
 }
 
-export function renderFramedCanvas(targetCanvas: HTMLCanvasElement, sourceCanvas: HTMLCanvasElement, frame: FrameConfig) {
+export function renderFramedCanvas(
+  targetCanvas: HTMLCanvasElement,
+  sourceCanvas: HTMLCanvasElement,
+  frame: FrameConfig,
+  scale = 1,
+) {
   const ctx = targetCanvas.getContext("2d");
   if (!ctx) return;
 
-  const metrics = getFrameMetrics(frame, sourceCanvas.width, sourceCanvas.height);
+  const metrics = getFrameMetrics(frame, sourceCanvas.width, sourceCanvas.height, scale);
   const type = getTypography(frame);
   const outerRadius = frame.cornerRadius;
   const inset = frame.borderWidth / 2;
 
-  targetCanvas.width = metrics.width;
-  targetCanvas.height = metrics.height;
+  targetCanvas.width = Math.round(metrics.width);
+  targetCanvas.height = Math.round(metrics.height);
   ctx.clearRect(0, 0, metrics.width, metrics.height);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
 
   if (frame.shadow > 0) {
     ctx.save();
@@ -202,7 +215,7 @@ export function renderFramedCanvas(targetCanvas: HTMLCanvasElement, sourceCanvas
   }
 
   if (frame.badgeText) {
-    const badgeWidth = getBadgeWidth(frame);
+    const badgeWidth = getBadgeWidth(frame, scale);
     const badgeX = (metrics.width - badgeWidth) / 2;
     ctx.fillStyle = frame.badgeColor;
     roundRect(ctx, badgeX, metrics.badgeY, badgeWidth, metrics.badgeHeight, metrics.badgeHeight / 2);
@@ -233,13 +246,21 @@ export function renderFramedCanvas(targetCanvas: HTMLCanvasElement, sourceCanvas
   roundRect(ctx, metrics.panelX, metrics.panelY, metrics.panelWidth, metrics.panelHeight, metrics.panelRadius);
   ctx.fill();
 
+  const hairline = Math.max(1, scale);
   ctx.strokeStyle = withAlpha(frame.borderColor, 0.2);
-  ctx.lineWidth = 1;
-  roundRect(ctx, metrics.panelX + 0.5, metrics.panelY + 0.5, metrics.panelWidth - 1, metrics.panelHeight - 1, metrics.panelRadius - 0.5);
+  ctx.lineWidth = hairline;
+  roundRect(
+    ctx,
+    metrics.panelX + hairline / 2,
+    metrics.panelY + hairline / 2,
+    metrics.panelWidth - hairline,
+    metrics.panelHeight - hairline,
+    metrics.panelRadius - hairline / 2,
+  );
   ctx.stroke();
 
   if (frame.type === "scanner") {
-    drawScannerDecorationsCanvas(ctx, metrics, frame);
+    drawScannerDecorationsCanvas(ctx, metrics, frame, scale);
   }
 
   ctx.drawImage(sourceCanvas, metrics.contentX, metrics.contentY, sourceCanvas.width, sourceCanvas.height);
@@ -300,9 +321,9 @@ export function exportFramedSvg(innerSvg: string, frame: FrameConfig, contentWid
   return svg;
 }
 
-function drawScannerDecorationsCanvas(ctx: CanvasRenderingContext2D, metrics: FrameMetrics, frame: FrameConfig) {
-  const inset = 16;
-  const corner = 26;
+function drawScannerDecorationsCanvas(ctx: CanvasRenderingContext2D, metrics: FrameMetrics, frame: FrameConfig, scale = 1) {
+  const inset = 16 * scale;
+  const corner = 26 * scale;
   const left = metrics.panelX + inset;
   const right = metrics.panelX + metrics.panelWidth - inset;
   const top = metrics.panelY + inset;
@@ -310,7 +331,7 @@ function drawScannerDecorationsCanvas(ctx: CanvasRenderingContext2D, metrics: Fr
 
   ctx.save();
   ctx.strokeStyle = frame.borderColor;
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 6 * scale;
   ctx.lineCap = "round";
 
   const segments = [
@@ -329,13 +350,13 @@ function drawScannerDecorationsCanvas(ctx: CanvasRenderingContext2D, metrics: Fr
   }
 
   const centerX = metrics.width / 2;
-  const chevronTop = metrics.panelY - 14;
+  const chevronTop = metrics.panelY - 14 * scale;
   for (let i = 0; i < 2; i++) {
-    const y = chevronTop - i * 12;
+    const y = chevronTop - i * 12 * scale;
     ctx.beginPath();
-    ctx.moveTo(centerX - 14, y);
-    ctx.lineTo(centerX, y + 10);
-    ctx.lineTo(centerX + 14, y);
+    ctx.moveTo(centerX - 14 * scale, y);
+    ctx.lineTo(centerX, y + 10 * scale);
+    ctx.lineTo(centerX + 14 * scale, y);
     ctx.stroke();
   }
   ctx.restore();
