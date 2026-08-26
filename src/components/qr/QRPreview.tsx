@@ -1,5 +1,16 @@
-import { useEffect, useRef, useCallback } from "react";
-import { QRConfig, generateQRMatrix, renderQRToCanvas, exportCanvasAsPDF, exportCanvasAsPNG, exportCanvasAsSVG, downloadSVG } from "@/lib/qr-engine";
+import { useEffect, useRef, useCallback, useState } from "react";
+import {
+  QRConfig,
+  generateQRMatrix,
+  renderQRToCanvas,
+  createHighResQRCanvas,
+  exportCanvasAsPDF,
+  exportCanvasAsPNG,
+  exportCanvasAsSVG,
+  downloadSVG,
+  getExportPixelRatio,
+  getQRPixelMetrics,
+} from "@/lib/qr-engine";
 import { Button } from "@/components/ui/button";
 import { Image, FileText } from "lucide-react";
 import { motion } from "framer-motion";
@@ -17,8 +28,10 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
   const { t } = useI18n();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const matrixRef = useRef<ReturnType<typeof generateQRMatrix> | null>(null);
+  const [exportPixels, setExportPixels] = useState(config.size);
+  const [isExporting, setIsExporting] = useState(false);
   const hasFrame = Boolean(frame && frame.type !== "none");
-  const frameMetrics = hasFrame && frame ? getFrameMetrics(frame, config.size) : null;
+  const frameMetrics = hasFrame && frame ? getFrameMetrics(frame, config.size, config.size) : null;
   const typography = hasFrame && frame ? getTypography(frame) : null;
   const isScannerFrame = frame?.type === "scanner";
 
@@ -28,6 +41,9 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
       const matrix = generateQRMatrix(config);
       matrixRef.current = matrix;
       renderQRToCanvas(canvasRef.current, matrix, config);
+      setExportPixels(
+        getQRPixelMetrics(matrix.size, config.size, getExportPixelRatio(config.size)).canvasSize,
+      );
     } catch {
       // invalid data, ignore
     }
@@ -38,35 +54,57 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
     render();
   }, [render, hasFrame, frame?.type]);
 
-  const createHighResCanvas = () => {
-    const scale = 3;
-    const highResConfig: QRConfig = {
-      ...config,
-      size: config.size * scale,
-    };
+  /**
+   * Every raster export goes through here so the bitmap is rendered fresh at
+   * print resolution *and* the logo bitmap is guaranteed to be decoded and
+   * painted before the file is written.
+   */
+  const buildExportCanvas = useCallback(async () => {
+    const qrCanvas = await createHighResQRCanvas(config);
 
-    const matrix = generateQRMatrix(highResConfig);
-    const sourceCanvas = document.createElement("canvas");
-    renderQRToCanvas(sourceCanvas, matrix, highResConfig);
-
-    if (hasFrame && frame) {
-      const exportCanvas = document.createElement("canvas");
-      renderFramedCanvas(exportCanvas, sourceCanvas, scaleFrameConfig(frame, scale));
-      return exportCanvas;
+    if (!hasFrame || !frame) {
+      return {
+        canvas: qrCanvas,
+        logicalWidth: config.size,
+        logicalHeight: config.size,
+      };
     }
 
-    return sourceCanvas;
-  };
+    const scale = qrCanvas.width / config.size;
+    const logicalMetrics = getFrameMetrics(frame, config.size, config.size);
+    const framedCanvas = document.createElement("canvas");
+    renderFramedCanvas(framedCanvas, qrCanvas, scaleFrameConfig(frame, scale), scale);
+
+    return {
+      canvas: framedCanvas,
+      logicalWidth: logicalMetrics.width,
+      logicalHeight: logicalMetrics.height,
+    };
+  }, [config, frame, hasFrame]);
+
+  const runExport = useCallback(
+    async (write: (result: Awaited<ReturnType<typeof buildExportCanvas>>) => void) => {
+      if (isExporting) return;
+      setIsExporting(true);
+      try {
+        write(await buildExportCanvas());
+      } catch {
+        // invalid data or a broken logo; nothing to download
+      } finally {
+        setIsExporting(false);
+      }
+    },
+    [buildExportCanvas, isExporting],
+  );
 
   const handleDownloadPNG = () => {
-    if (!canvasRef.current) return;
-    if (hasFrame && frame) {
-      const exportCanvas = document.createElement("canvas");
-      renderFramedCanvas(exportCanvas, canvasRef.current, frame);
-      exportCanvasAsPNG(exportCanvas, "qrcode.png");
-      return;
-    }
-    exportCanvasAsPNG(canvasRef.current, "qrcode.png");
+    void runExport(({ canvas }) => exportCanvasAsPNG(canvas, "qrcode.png"));
+  };
+
+  const handleDownloadPDF = () => {
+    void runExport(({ canvas, logicalWidth, logicalHeight }) =>
+      exportCanvasAsPDF(canvas, "qrcode.pdf", { logicalWidth, logicalHeight }),
+    );
   };
 
   const handleDownloadSVG = () => {
@@ -75,11 +113,6 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
       ? exportFramedSvg(exportCanvasAsSVG(matrixRef.current, config), frame, config.size, config.size)
       : exportCanvasAsSVG(matrixRef.current, config);
     downloadSVG(svg, "qrcode.svg");
-  };
-
-  const handleDownloadPDF = () => {
-    const exportCanvas = createHighResCanvas();
-    exportCanvasAsPDF(exportCanvas, "qrcode.pdf");
   };
 
   return (
@@ -185,11 +218,11 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
       </motion.div>
 
       <div className="flex flex-wrap justify-center gap-2">
-        <Button onClick={handleDownloadPNG} variant="outline" size="sm" className="gap-2">
+        <Button onClick={handleDownloadPNG} disabled={isExporting} variant="outline" size="sm" className="gap-2">
           <Image className="h-4 w-4" />
           PNG
         </Button>
-        <Button onClick={handleDownloadPDF} variant="outline" size="sm" className="gap-2">
+        <Button onClick={handleDownloadPDF} disabled={isExporting} variant="outline" size="sm" className="gap-2">
           <FileText className="h-4 w-4" />
           PDF
         </Button>
@@ -201,7 +234,7 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
 
       <div className="text-center">
         <p className="font-mono text-xs text-muted-foreground">
-          {config.size}×{config.size}px · {t.qrControls.errorCorrectionShort}: {config.errorCorrection}
+          {config.size}×{config.size}px → {exportPixels}×{exportPixels}px · {t.qrControls.errorCorrectionShort}: {config.logoUrl ? "H" : config.errorCorrection}
         </p>
       </div>
     </div>
