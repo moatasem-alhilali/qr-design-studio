@@ -51,15 +51,22 @@ export default async function handler(request: Request): Promise<Response> {
   // The console should see who it is really answering, not the edge node.
   headers.set("X-Forwarded-Host", incoming.host);
 
+  /*
+    The body is buffered rather than piped through. Streaming a request body
+    needs `duplex: "half"`, which is not honoured consistently across runtimes
+    and fails the whole request when it is not — and every call here is a small
+    JSON document, so there is nothing to gain by streaming it.
+  */
+  const hasBody = request.method !== "GET" && request.method !== "HEAD";
+  const body = hasBody ? await request.arrayBuffer() : undefined;
+
   try {
     const upstream = await fetch(target, {
       method: request.method,
       headers,
-      body: request.method === "GET" || request.method === "HEAD" ? undefined : request.body,
+      body: body && body.byteLength > 0 ? body : undefined,
       redirect: "manual",
-      // Required by the Fetch standard when streaming a request body.
-      ...(request.body ? { duplex: "half" } : {}),
-    } as RequestInit);
+    });
 
     const responseHeaders = new Headers(upstream.headers);
     // Same-origin now, so any CORS headers from upstream are noise.
@@ -71,9 +78,16 @@ export default async function handler(request: Request): Promise<Response> {
       statusText: upstream.statusText,
       headers: responseHeaders,
     });
-  } catch {
+  } catch (error) {
+    // The reason matters: a blocked request and an unreachable backend look
+    // identical from the browser otherwise.
     return Response.json(
-      { success: false, message: "Could not reach the API.", code: "API_UNREACHABLE", data: [] },
+      {
+        success: false,
+        message: "Could not reach the API.",
+        code: "API_UNREACHABLE",
+        data: { reason: error instanceof Error ? error.message : "unknown" },
+      },
       { status: 502 },
     );
   }

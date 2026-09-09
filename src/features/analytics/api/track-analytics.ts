@@ -67,11 +67,12 @@ function analyticsEndpoint(): string {
   const prefix = base ? (base.endsWith(API_PREFIX) ? base : `${base}${API_PREFIX}`) : API_PREFIX;
 
   /*
-    "collect", not "track": content blockers match the word "track" in a URL,
-    so first-party analytics was being dropped in the browser before it was
-    ever sent. The backend answers on both paths.
+    No "track", no "collect", no "analytics" anywhere in the path. Blockers
+    filter on those words, and `/collect` in particular is Google Analytics' own
+    path, so it is matched even harder than `/track` was. The backend still
+    answers on the old paths for bundles already cached in the wild.
   */
-  return `${prefix}/qr-design-studio/analytics/collect`;
+  return `${prefix}/qr-design-studio/visits`;
 }
 
 function safeUrl(value: string | null | undefined): string | null {
