@@ -147,19 +147,25 @@ export function trackAnalyticsEvent(payload: AnalyticsPayload): void {
     sessionId: getSessionId(),
   });
 
+  /*
+    `fetch` with `keepalive`, deliberately not `navigator.sendBeacon`.
+
+    A beacon always carries credentials mode "include" — the Beacon spec gives
+    no way to turn that off. A CORS response can only satisfy "include" by
+    naming the exact origin *and* returning `Access-Control-Allow-Credentials:
+    true`, and this API is configured for anonymous access: wildcard origin, no
+    credentials. So every beacon passed its preflight and then died on the real
+    request, and nothing here could see it fail.
+
+    Worse, `sendBeacon` returns true the moment the request is *queued*, not
+    when it succeeds, so the early return below it meant this working call was
+    never reached.
+
+    `keepalive` gives the same guarantee that matters — the request outlives the
+    page that started it — for bodies under 64KB, and these are about 1KB.
+  */
   try {
-    const endpoint = analyticsEndpoint();
-
-    if (navigator.sendBeacon) {
-      const sent = navigator.sendBeacon(
-        endpoint,
-        new Blob([body], { type: "application/json" }),
-      );
-
-      if (sent) return;
-    }
-
-    void fetch(endpoint, {
+    void fetch(analyticsEndpoint(), {
       method: "POST",
       headers: {
         Accept: "application/json",
@@ -168,6 +174,7 @@ export function trackAnalyticsEvent(payload: AnalyticsPayload): void {
       body,
       keepalive: true,
       cache: "no-store",
+      // Anonymous by design: no cookies, and no credentialed CORS handshake.
       credentials: "omit",
     }).catch(() => undefined);
   } catch {
