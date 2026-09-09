@@ -4,10 +4,11 @@ import path from "path";
 
 export default defineConfig(({ mode }) => {
   /*
-    `API_ORIGIN` is deliberately not a `VITE_` variable: it is read here, on the
-    dev server, and by the /api/v1 edge function in production. The browser only
-    ever sees same-origin `/api/v1/...` paths, so the backend host stays out of
-    the bundle and out of a visitor's network tab.
+    `API_ORIGIN` is deliberately not a `VITE_` variable: it is read here, by the
+    dev server, and never reaches the browser. Production does the same job with
+    the `rewrites` block in vercel.json. Either way the browser only ever sees
+    same-origin `/api/v1/...` paths, so the backend host stays out of the bundle
+    and out of a visitor's network tab.
   */
   const env = loadEnv(mode, process.cwd(), "");
   const apiOrigin = env.API_ORIGIN?.trim();
