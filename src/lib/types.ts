@@ -77,6 +77,12 @@ export interface ScanReliabilityResult {
   score: number;
   grade: 'Excellent' | 'Good' | 'Warning' | 'Risky';
   issues: ScanIssue[];
+  /** Modules across the symbol. The single biggest driver of how fast a camera locks on. */
+  moduleCount: number;
+  /** QR version, 1-40. Derived from the module count. */
+  version: number;
+  /** Share of the symbol's area the logo plate erases, 0-1. */
+  logoCoverage: number;
 }
 
 export interface ScanIssue {

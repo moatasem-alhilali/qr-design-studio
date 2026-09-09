@@ -22,6 +22,14 @@ qrcode.stringToBytes = (value: string) => Array.from(new TextEncoder().encode(va
 export type ModuleStyle = "square" | "rounded" | "dots" | "diamond" | "extra-rounded" | "tiny-squares" | "heart" | "star" | "triangle" | "bubble";
 export type CornerStyle = "square" | "rounded" | "circle" | "thick" | "minimal" | "decorative" | "ring" | "leaf" | "frame-dots";
 export type ColorMode = "single" | "gradient";
+/**
+ * How the logo artwork itself is cut. "original" letterboxes the picture
+ * untouched — every other value crops it to fill the box, the way an avatar
+ * cropper does, so a tall logo does not end up as a thin sliver in a circle.
+ */
+export type LogoShape = "original" | "square" | "rounded" | "circle";
+/** Geometry of the plate sitting behind the logo, and of its outline. */
+export type LogoPlateShape = "square" | "rounded" | "circle";
 export type { DataType, QRFields };
 
 export interface QRConfig {
@@ -45,6 +53,20 @@ export interface QRConfig {
   gradientAngle: number;
   logoUrl: string | null;
   logoScale: number;
+  /** Cut applied to the artwork. See `LogoShape`. */
+  logoShape: LogoShape;
+  /** Corner radius for the "rounded" shapes, as a percentage of the box side. */
+  logoRadius: number;
+  /** Breathing room between artwork and plate edge, as a percentage of the box. */
+  logoPadding: number;
+  /** Whether the backing plate is filled at all. */
+  logoPlate: boolean;
+  logoPlateShape: LogoPlateShape;
+  /** Plate fill. `null` follows the sheet background. */
+  logoPlateColor: string | null;
+  /** Outline around the plate, as a percentage of the plate side. */
+  logoBorderWidth: number;
+  logoBorderColor: string;
   size: number;
   errorCorrection: "L" | "M" | "Q" | "H";
 }
@@ -64,6 +86,14 @@ export const defaultConfig: QRConfig = {
   gradientAngle: 135,
   logoUrl: null,
   logoScale: 0.25,
+  logoShape: "original",
+  logoRadius: 15,
+  logoPadding: 15,
+  logoPlate: true,
+  logoPlateShape: "rounded",
+  logoPlateColor: null,
+  logoBorderWidth: 0,
+  logoBorderColor: "#FFFFFF",
   size: 400,
   errorCorrection: "H",
 };
@@ -336,7 +366,7 @@ export function renderQRToCanvas(
     const logoUrl = config.logoUrl;
     const ready = options.logoImage ?? getCachedLogo(logoUrl);
 
-    drawLogoPlate(ctx, canvasSize, cellSize, config);
+    drawLogoPlate(ctx, canvasSize, config);
 
     if (ready) {
       drawLogoImage(ctx, canvasSize, config, ready);
@@ -345,7 +375,7 @@ export function renderQRToCanvas(
       loadLogoImage(logoUrl)
         .then((img) => {
           if (canvas.width !== canvasSize || config.logoUrl !== logoUrl) return;
-          drawLogoPlate(ctx, canvasSize, cellSize, config);
+          drawLogoPlate(ctx, canvasSize, config);
           drawLogoImage(ctx, canvasSize, config, img);
           options.onLogoReady?.();
         })
@@ -378,27 +408,146 @@ export async function renderQRToCanvasAsync(
   renderQRToCanvas(canvas, matrix, config, { ...options, logoImage });
 }
 
-function getLogoBox(canvasSize: number, config: QRConfig) {
-  const logoSize = canvasSize * config.logoScale;
+function clampNumber(value: number, min: number, max: number): number {
+  if (!Number.isFinite(value)) return min;
+  return Math.min(max, Math.max(min, value));
+}
+
+export interface LogoGeometry {
+  /** Square box the artwork is fitted into or cropped to. */
+  logoSize: number;
+  logoX: number;
+  logoY: number;
+  /** Plate box: the logo box grown by the padding on every side. */
+  plateSize: number;
+  plateX: number;
+  plateY: number;
+  /** Corner radius of the artwork cut. Zero is a hard square. */
+  logoCornerRadius: number;
+  /** Corner radius of the plate, and of the outline that follows it. */
+  plateCornerRadius: number;
+  /** Outline thickness in the caller's unit. Zero when the outline is off. */
+  borderWidth: number;
+}
+
+function cornerRadius(shape: LogoShape | LogoPlateShape, side: number, radiusPercent: number): number {
+  if (shape === "circle") return side / 2;
+  if (shape === "rounded") return (clampNumber(radiusPercent, 0, 50) / 100) * side;
+  return 0;
+}
+
+/**
+ * Single source of truth for where the logo, its plate and its outline sit,
+ * expressed in whatever unit the caller works in — canvas pixels, SVG user
+ * units, or PDF points. Every renderer goes through this, so the preview, the
+ * PNG, the SVG and the vector PDF cannot drift apart.
+ */
+export function getLogoGeometry(edge: number, config: QRConfig): LogoGeometry {
+  const logoSize = edge * config.logoScale;
+  const pad = logoSize * (clampNumber(config.logoPadding ?? 15, 0, 40) / 100);
+  const plateSize = logoSize + pad * 2;
+  const radius = config.logoRadius ?? 15;
+  const shape = config.logoShape ?? "original";
+  const plateShape = config.logoPlateShape ?? "rounded";
+
   return {
     logoSize,
-    logoX: (canvasSize - logoSize) / 2,
-    logoY: (canvasSize - logoSize) / 2,
+    logoX: (edge - logoSize) / 2,
+    logoY: (edge - logoSize) / 2,
+    plateSize,
+    plateX: (edge - plateSize) / 2,
+    plateY: (edge - plateSize) / 2,
+    logoCornerRadius: cornerRadius(shape === "original" ? "square" : shape, logoSize, radius),
+    plateCornerRadius: cornerRadius(plateShape, plateSize, radius),
+    borderWidth: plateSize * (clampNumber(config.logoBorderWidth ?? 0, 0, 12) / 100),
   };
 }
 
-function drawLogoPlate(
+/** Plate fill. A null colour follows the sheet, which is the original behaviour. */
+export function resolveLogoPlateColor(config: QRConfig): string {
+  if (config.logoPlateColor) return config.logoPlateColor;
+  return config.transparentBg ? "rgba(255,255,255,0.95)" : config.bgColor;
+}
+
+export interface LogoDrawRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Placement of the artwork inside its box. "original" fits the whole picture
+ * in and letterboxes it; every other shape covers the box and lets the cut do
+ * the cropping, so a tall logo does not become a sliver inside a circle.
+ */
+export function getLogoDrawRect(
+  geometry: LogoGeometry,
+  config: QRConfig,
+  naturalWidth: number,
+  naturalHeight: number
+): LogoDrawRect {
+  const w = naturalWidth || geometry.logoSize;
+  const h = naturalHeight || geometry.logoSize;
+  const fit = (config.logoShape ?? "original") === "original";
+  const scale = fit
+    ? Math.min(geometry.logoSize / w, geometry.logoSize / h)
+    : Math.max(geometry.logoSize / w, geometry.logoSize / h);
+  const width = w * scale;
+  const height = h * scale;
+
+  return {
+    x: geometry.logoX + (geometry.logoSize - width) / 2,
+    y: geometry.logoY + (geometry.logoSize - height) / 2,
+    width,
+    height,
+  };
+}
+
+function traceBox(
   ctx: CanvasRenderingContext2D,
-  canvasSize: number,
-  cellSize: number,
-  config: QRConfig
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
 ): void {
-  const { logoSize, logoX, logoY } = getLogoBox(canvasSize, config);
-  const pad = logoSize * 0.15;
+  if (r <= 0) {
+    ctx.beginPath();
+    ctx.rect(x, y, w, h);
+    return;
+  }
+  roundRect(ctx, x, y, w, h, r);
+}
+
+function drawLogoPlate(ctx: CanvasRenderingContext2D, canvasSize: number, config: QRConfig): void {
+  const geometry = getLogoGeometry(canvasSize, config);
+  const filled = config.logoPlate ?? true;
+  if (!filled && geometry.borderWidth <= 0) return;
+
   ctx.save();
-  ctx.fillStyle = config.transparentBg ? "rgba(255,255,255,0.95)" : config.bgColor;
-  roundRect(ctx, logoX - pad, logoY - pad, logoSize + pad * 2, logoSize + pad * 2, cellSize * 2);
-  ctx.fill();
+  if (filled) {
+    ctx.fillStyle = resolveLogoPlateColor(config);
+    traceBox(ctx, geometry.plateX, geometry.plateY, geometry.plateSize, geometry.plateSize, geometry.plateCornerRadius);
+    ctx.fill();
+  }
+
+  if (geometry.borderWidth > 0) {
+    // A centred stroke straddles its path, so inset by half a line width to
+    // keep the outline inside the plate instead of eating into the modules.
+    const inset = geometry.borderWidth / 2;
+    ctx.strokeStyle = config.logoBorderColor;
+    ctx.lineWidth = geometry.borderWidth;
+    traceBox(
+      ctx,
+      geometry.plateX + inset,
+      geometry.plateY + inset,
+      geometry.plateSize - geometry.borderWidth,
+      geometry.plateSize - geometry.borderWidth,
+      Math.max(0, geometry.plateCornerRadius - inset)
+    );
+    ctx.stroke();
+  }
   ctx.restore();
 }
 
@@ -408,25 +557,60 @@ function drawLogoImage(
   config: QRConfig,
   img: HTMLImageElement
 ): void {
-  const { logoSize, logoX, logoY } = getLogoBox(canvasSize, config);
-  const naturalWidth = img.naturalWidth || logoSize;
-  const naturalHeight = img.naturalHeight || logoSize;
-  // Fit inside the box without distorting non-square logos.
-  const scale = Math.min(logoSize / naturalWidth, logoSize / naturalHeight);
-  const drawWidth = naturalWidth * scale;
-  const drawHeight = naturalHeight * scale;
+  const geometry = getLogoGeometry(canvasSize, config);
+  const rect = getLogoDrawRect(geometry, config, img.naturalWidth, img.naturalHeight);
 
   ctx.save();
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(
-    img,
-    logoX + (logoSize - drawWidth) / 2,
-    logoY + (logoSize - drawHeight) / 2,
-    drawWidth,
-    drawHeight
-  );
+  if ((config.logoShape ?? "original") !== "original") {
+    traceBox(ctx, geometry.logoX, geometry.logoY, geometry.logoSize, geometry.logoSize, geometry.logoCornerRadius);
+    ctx.clip();
+  }
+  ctx.drawImage(img, rect.x, rect.y, rect.width, rect.height);
   ctx.restore();
+}
+
+/**
+ * Rasterizes the logo with its cut already applied, on a transparent square.
+ * jsPDF has no clipping path we can rely on, so the vector export embeds this
+ * bitmap rather than trying to rebuild the shape in PDF operators.
+ */
+export function composeLogoBitmap(
+  img: HTMLImageElement,
+  config: QRConfig,
+  sizePx = 1024
+): HTMLCanvasElement | null {
+  const canvas = document.createElement("canvas");
+  canvas.width = sizePx;
+  canvas.height = sizePx;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const shape = config.logoShape ?? "original";
+  // The box maps onto the whole bitmap, so the geometry is stated directly
+  // rather than derived from a sheet edge.
+  const geometry: LogoGeometry = {
+    logoSize: sizePx,
+    logoX: 0,
+    logoY: 0,
+    plateSize: sizePx,
+    plateX: 0,
+    plateY: 0,
+    logoCornerRadius: cornerRadius(shape === "original" ? "square" : shape, sizePx, config.logoRadius ?? 15),
+    plateCornerRadius: 0,
+    borderWidth: 0,
+  };
+  const rect = getLogoDrawRect(geometry, config, img.naturalWidth, img.naturalHeight);
+
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  if (shape !== "original") {
+    traceBox(ctx, 0, 0, sizePx, sizePx, geometry.logoCornerRadius);
+    ctx.clip();
+  }
+  ctx.drawImage(img, rect.x, rect.y, rect.width, rect.height);
+  return canvas;
 }
 
 function drawModule(
@@ -769,18 +953,67 @@ export function exportCanvasAsSVG(matrix: QRMatrix, config: QRConfig): string {
 
   if (config.logoUrl) {
     // Measured against the full sheet, matching how the canvas sizes it.
-    const logoSize = config.size * config.logoScale;
-    const logoX = (config.size - logoSize) / 2;
-    const logoY = (config.size - logoSize) / 2;
-    const pad = logoSize * 0.15;
-    const plateColor = config.transparentBg ? "rgba(255,255,255,0.95)" : config.bgColor;
+    const geometry = getLogoGeometry(config.size, config);
     const href = escapeXmlAttr(config.logoUrl);
-    svg += `<rect x="${logoX - pad}" y="${logoY - pad}" width="${logoSize + pad * 2}" height="${logoSize + pad * 2}" rx="${cellSize * 2}" fill="${plateColor}"/>`;
-    svg += `<image x="${logoX}" y="${logoY}" width="${logoSize}" height="${logoSize}" preserveAspectRatio="xMidYMid meet" href="${href}" xlink:href="${href}"/>`;
+    const shape = config.logoShape ?? "original";
+
+    if (config.logoPlate ?? true) {
+      svg += svgBox(
+        geometry.plateX,
+        geometry.plateY,
+        geometry.plateSize,
+        geometry.plateCornerRadius,
+        `fill="${resolveLogoPlateColor(config)}"`
+      );
+    }
+
+    if (geometry.borderWidth > 0) {
+      // SVG strokes are centred too, so the outline is inset the same way the
+      // canvas insets it.
+      const inset = geometry.borderWidth / 2;
+      svg += svgBox(
+        geometry.plateX + inset,
+        geometry.plateY + inset,
+        geometry.plateSize - geometry.borderWidth,
+        Math.max(0, geometry.plateCornerRadius - inset),
+        `fill="none" stroke="${config.logoBorderColor}" stroke-width="${geometry.borderWidth}"`
+      );
+    }
+
+    if (shape === "original") {
+      svg += `<image x="${geometry.logoX}" y="${geometry.logoY}" width="${geometry.logoSize}" height="${geometry.logoSize}" preserveAspectRatio="xMidYMid meet" href="${href}" xlink:href="${href}"/>`;
+    } else {
+      svg += `<defs><clipPath id="qrlogoclip">${svgBox(geometry.logoX, geometry.logoY, geometry.logoSize, geometry.logoCornerRadius, "")}</clipPath></defs>`;
+
+      // The cover rect is stated outright whenever the bitmap has been decoded,
+      // because "slice" is unreliable for an uploaded *SVG* logo: browsers let
+      // the referenced document's own aspect rules win, and the cut ends up
+      // letterboxed here while the canvas preview shows it filling. Falling
+      // back to "slice" only matters before anything has rendered the logo.
+      const decoded = getCachedLogo(config.logoUrl);
+      const placement = decoded
+        ? (() => {
+            const rect = getLogoDrawRect(geometry, config, decoded.naturalWidth, decoded.naturalHeight);
+            return `x="${rect.x}" y="${rect.y}" width="${rect.width}" height="${rect.height}" preserveAspectRatio="none"`;
+          })()
+        : `x="${geometry.logoX}" y="${geometry.logoY}" width="${geometry.logoSize}" height="${geometry.logoSize}" preserveAspectRatio="xMidYMid slice"`;
+
+      svg += `<image ${placement} clip-path="url(#qrlogoclip)" href="${href}" xlink:href="${href}"/>`;
+    }
   }
 
   svg += "</svg>";
   return svg;
+}
+
+/** A rect, a rounded rect or a circle, whichever the radius asks for. */
+function svgBox(x: number, y: number, side: number, radius: number, attrs: string): string {
+  const suffix = attrs ? ` ${attrs}` : "";
+  if (radius >= side / 2) {
+    return `<circle cx="${x + side / 2}" cy="${y + side / 2}" r="${side / 2}"${suffix}/>`;
+  }
+  const rx = radius > 0 ? ` rx="${radius}"` : "";
+  return `<rect x="${x}" y="${y}" width="${side}" height="${side}"${rx}${suffix}/>`;
 }
 
 function escapeXmlAttr(value: string) {

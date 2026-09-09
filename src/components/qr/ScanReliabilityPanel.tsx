@@ -1,16 +1,19 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { AlertCircle, AlertTriangle, CheckCircle2, Info, Loader2, ScanLine, XCircle } from "lucide-react";
 
 import { QRConfig } from "@/lib/qr-engine";
-import { analyzeScanReliability } from "@/lib/scan-reliability";
+import { analyzeScanReliability, optimizeForScanning } from "@/lib/scan-reliability";
 import { isVerificationSupported, verifyQR, type VerifyResult } from "@/lib/qr-verify";
 import { FrameConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { Stamp } from "@/components/workshop/Stamp";
 import { translateReliabilityGrade, translateReliabilityText, useI18n } from "@/shared/i18n/i18n";
 
 interface ScanReliabilityPanelProps {
   config: QRConfig;
   frame?: FrameConfig;
+  /** Lets the press check fix what it just measured. */
+  onChange?: (updates: Partial<QRConfig>) => void;
 }
 
 const gradeInk: Record<string, string> = {
@@ -31,10 +34,20 @@ const severityIcons = {
  * — so the score reads as a density gauge and an inspection docket, not as a
  * progress bar in a card.
  */
-export function ScanReliabilityPanel({ config, frame }: ScanReliabilityPanelProps) {
+export function ScanReliabilityPanel({ config, frame, onChange }: ScanReliabilityPanelProps) {
   const { locale, t } = useI18n();
-  const result = analyzeScanReliability(config, frame);
+  // Both of these encode the payload to measure it, so they are held against
+  // the config rather than recomputed for every unrelated re-render.
+  const result = useMemo(() => analyzeScanReliability(config, frame), [config, frame]);
   const ink = gradeInk[result.grade] ?? "hsl(var(--ink))";
+
+  /*
+    Reading speed is not a matter of taste: it is grid density, contrast, and
+    how much of the symbol the logo eats. Those are all measurable, so the
+    panel offers to fix them in one edit rather than only naming them.
+  */
+  const tuning = useMemo(() => optimizeForScanning(config), [config]);
+  const tuned = tuning.applied.length === 0;
 
   /*
     The score above is a heuristic. This actually decodes the rendered symbol
@@ -101,6 +114,41 @@ export function ScanReliabilityPanel({ config, frame }: ScanReliabilityPanelProp
           </p>
         </div>
       </div>
+
+      {/* What actually governs how fast a camera locks on. */}
+      {result.moduleCount > 0 && (
+        <dl className="grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-[10px] uppercase tracking-[0.1em]">
+          <dt className="text-ink-faint">{t.qrControls.gridDensity}</dt>
+          <dd className="text-end tabular-nums text-ink">
+            {result.moduleCount}×{result.moduleCount}
+            <span className="text-ink-faint"> · V{result.version}</span>
+          </dd>
+          {config.logoUrl && (
+            <>
+              <dt className="text-ink-faint">{t.qrControls.logoCoverage}</dt>
+              <dd className="text-end tabular-nums text-ink">{Math.round(result.logoCoverage * 100)}%</dd>
+            </>
+          )}
+        </dl>
+      )}
+
+      {onChange && (
+        <div className="space-y-1.5">
+          <Stamp
+            solid
+            disabled={tuned}
+            onClick={() => onChange(tuning.updates)}
+            className="w-full disabled:opacity-45"
+          >
+            {tuned ? t.qrControls.alreadyTuned : t.qrControls.tuneForSpeed}
+          </Stamp>
+          {!tuned && (
+            <p className="text-[11px] leading-snug text-ink-faint">
+              {tuning.applied.map((code) => t.values.scanFixes[code]).join(" · ")}
+            </p>
+          )}
+        </div>
+      )}
 
       {result.issues.length > 0 ? (
         <ul className="space-y-0">

@@ -158,7 +158,7 @@ const Index = () => {
 
             <BenchDrawer title={t.home.quality} icon={<ShieldCheck className="h-3 w-3" />} tape="cyan">
               {isQR ? (
-                <ScanReliabilityPanel config={config} frame={frameConfig} />
+                <ScanReliabilityPanel config={config} frame={frameConfig} onChange={handleChange} />
               ) : (
                 <BarcodeReliabilityPanel config={barcodeConfig} />
               )}

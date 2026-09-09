@@ -1,7 +1,11 @@
 import { jsPDF } from "jspdf";
 
 import {
+  composeLogoBitmap,
+  getLogoGeometry,
   loadLogoImage,
+  resolveLogoPlateColor,
+  type LogoGeometry,
   type ModuleStyle,
   type QRConfig,
   type QRMatrix,
@@ -27,6 +31,16 @@ interface RGB {
 }
 
 function hexToRgb(hex: string): RGB {
+  // The logo plate can resolve to an rgba() string when the sheet is
+  // transparent. PDF has no page alpha here, so it flattens to the raw channels.
+  if (hex.startsWith("rgb")) {
+    const [r, g, b] = hex
+      .slice(hex.indexOf("(") + 1, hex.lastIndexOf(")"))
+      .split(",")
+      .map((part) => Number(part.trim()));
+    return { r: r || 0, g: g || 0, b: b || 0 };
+  }
+
   const normalised = hex.length === 4
     ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}`
     : hex;
@@ -256,26 +270,97 @@ export async function drawQRVector(
   }
 
   if (config.logoUrl) {
-    const logoEdge = edge * config.logoScale;
-    const lx = originX + (edge - logoEdge) / 2;
-    const ly = originY + (edge - logoEdge) / 2;
-    const pad = logoEdge * 0.15;
+    const geometry = getLogoGeometry(edge, config);
 
-    const plate = config.transparentBg ? { r: 255, g: 255, b: 255 } : hexToRgb(config.bgColor);
-    pdf.setFillColor(plate.r, plate.g, plate.b);
-    pdf.roundedRect(lx - pad, ly - pad, logoEdge + pad * 2, logoEdge + pad * 2, cell * 2, cell * 2, "F");
+    if (config.logoPlate ?? true) {
+      const plate = hexToRgb(resolveLogoPlateColor(config));
+      pdf.setFillColor(plate.r, plate.g, plate.b);
+      drawPlateShape(pdf, originX, originY, geometry, geometry.plateCornerRadius, 0, "F");
+    }
+
+    if (geometry.borderWidth > 0) {
+      const border = hexToRgb(config.logoBorderColor);
+      pdf.setDrawColor(border.r, border.g, border.b);
+      pdf.setLineWidth(geometry.borderWidth);
+      // PDF strokes straddle the path, exactly like canvas and SVG, so the
+      // outline is inset by half a line width for the same reason.
+      const inset = geometry.borderWidth / 2;
+      drawPlateShape(
+        pdf,
+        originX,
+        originY,
+        geometry,
+        Math.max(0, geometry.plateCornerRadius - inset),
+        inset,
+        "S",
+      );
+    }
 
     try {
       const img = await loadLogoImage(config.logoUrl);
-      // Preserve the logo's aspect ratio inside its box.
-      const scale = Math.min(logoEdge / img.naturalWidth, logoEdge / img.naturalHeight);
-      const w = img.naturalWidth * scale;
-      const h = img.naturalHeight * scale;
-      pdf.addImage(img, "PNG", lx + (logoEdge - w) / 2, ly + (logoEdge - h) / 2, w, h, undefined, "FAST");
+      // jsPDF cannot clip, so the cut is baked into a bitmap first. An
+      // "original" logo needs no cut and goes in at its own aspect ratio.
+      if ((config.logoShape ?? "original") === "original") {
+        const scale = Math.min(geometry.logoSize / img.naturalWidth, geometry.logoSize / img.naturalHeight);
+        const w = img.naturalWidth * scale;
+        const h = img.naturalHeight * scale;
+        pdf.addImage(
+          img,
+          "PNG",
+          originX + geometry.logoX + (geometry.logoSize - w) / 2,
+          originY + geometry.logoY + (geometry.logoSize - h) / 2,
+          w,
+          h,
+          undefined,
+          "FAST",
+        );
+      } else {
+        const cut = composeLogoBitmap(img, config);
+        if (cut) {
+          pdf.addImage(
+            cut,
+            "PNG",
+            originX + geometry.logoX,
+            originY + geometry.logoY,
+            geometry.logoSize,
+            geometry.logoSize,
+            undefined,
+            "FAST",
+          );
+        }
+      }
     } catch {
       // Plate stays; the symbol is still valid.
     }
   }
+}
+
+/**
+ * The plate outline as a PDF path. `inset` shrinks the box on every side, which
+ * is how a stroke is kept inside the plate footprint.
+ */
+function drawPlateShape(
+  pdf: jsPDF,
+  originX: number,
+  originY: number,
+  geometry: LogoGeometry,
+  radius: number,
+  inset: number,
+  style: "F" | "S",
+): void {
+  const x = originX + geometry.plateX + inset;
+  const y = originY + geometry.plateY + inset;
+  const side = geometry.plateSize - inset * 2;
+
+  if (radius >= side / 2) {
+    pdf.circle(x + side / 2, y + side / 2, side / 2, style);
+    return;
+  }
+  if (radius > 0) {
+    pdf.roundedRect(x, y, side, side, radius, radius, style);
+    return;
+  }
+  pdf.rect(x, y, side, side, style);
 }
 
 /** Single-symbol vector PDF, page sized to the design. */

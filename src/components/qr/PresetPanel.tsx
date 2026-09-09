@@ -1,10 +1,16 @@
 import { useRef } from "react";
 import { Trash2, Upload } from "lucide-react";
 
-import { QRConfig } from "@/lib/qr-engine";
+import { QRConfig, type LogoPlateShape, type LogoShape } from "@/lib/qr-engine";
 import { presets, applyPreset } from "@/lib/qr-presets";
 import { Dial } from "@/components/workshop/Dial";
+import { InkWell } from "@/components/workshop/InkWell";
+import { Tool } from "@/components/workshop/Tool";
+import { LogoShapeGlyph, PlateShapeGlyph } from "@/components/qr/glyphs";
 import { translateQRPreset, useI18n } from "@/shared/i18n/i18n";
+
+const logoShapes: LogoShape[] = ["original", "square", "rounded", "circle"];
+const plateShapes: LogoPlateShape[] = ["square", "rounded", "circle"];
 
 interface PresetPanelProps {
   config: QRConfig;
@@ -113,9 +119,84 @@ export function PresetPanel({ config, onChange, onPartialChange }: PresetPanelPr
         )}
 
         <input ref={fileInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+      </div>
 
-        {config.logoUrl && (
-          <div className="flex justify-center pt-1">
+      {/*
+        The finishing bench for the logo. Uploading artwork is only half the
+        job: a hard-edged rectangle dropped into a rounded code looks pasted on,
+        so the cut, the plate behind it and its outline are all adjustable here.
+      */}
+      {config.logoUrl && (
+        <>
+          <div className="space-y-2">
+            <p className="spec">{t.qrControls.logoShape}</p>
+            <div className="grid grid-cols-4 gap-1.5">
+              {logoShapes.map((value) => (
+                <Tool
+                  key={value}
+                  on={(config.logoShape ?? "original") === value}
+                  onClick={() => onPartialChange({ logoShape: value })}
+                >
+                  <LogoShapeGlyph shape={value} />
+                  {t.values.logoShapes[value]}
+                </Tool>
+              ))}
+            </div>
+            <p className="text-[11px] leading-snug text-ink-faint">{t.qrControls.logoShapeHint}</p>
+          </div>
+
+          <div className="space-y-3">
+            <p className="spec">{t.qrControls.logoPlate}</p>
+
+            <Tool
+              wide
+              on={config.logoPlate ?? true}
+              onClick={() => onPartialChange({ logoPlate: !(config.logoPlate ?? true) })}
+              className="w-full"
+            >
+              {(config.logoPlate ?? true) ? t.qrControls.logoPlateOn : t.qrControls.logoPlateOff}
+            </Tool>
+
+            <div className="grid grid-cols-3 gap-1.5">
+              {plateShapes.map((value) => (
+                <Tool
+                  key={value}
+                  on={(config.logoPlateShape ?? "rounded") === value}
+                  onClick={() => onPartialChange({ logoPlateShape: value })}
+                >
+                  <PlateShapeGlyph shape={value} />
+                  {t.values.logoPlateShapes[value]}
+                </Tool>
+              ))}
+            </div>
+
+            <div className="sheet-sunk flex flex-wrap items-start justify-center gap-x-5 gap-y-3 p-3">
+              <InkWell
+                value={config.logoPlateColor ?? config.bgColor}
+                onChange={(hex) => onPartialChange({ logoPlateColor: hex })}
+                label={t.qrControls.logoPlateColor}
+                empty={config.logoPlateColor === null}
+              />
+              <InkWell
+                value={config.logoBorderColor}
+                onChange={(hex) => onPartialChange({ logoBorderColor: hex })}
+                label={t.qrControls.logoBorderColor}
+              />
+            </div>
+
+            <Tool
+              wide
+              on={config.logoPlateColor === null}
+              onClick={() =>
+                onPartialChange({ logoPlateColor: config.logoPlateColor === null ? config.bgColor : null })
+              }
+              className="w-full"
+            >
+              {t.qrControls.logoPlateMatchSheet}
+            </Tool>
+          </div>
+
+          <div className="flex flex-wrap items-start justify-center gap-5 pt-1">
             <Dial
               value={Math.round(config.logoScale * 100)}
               min={10}
@@ -126,9 +207,42 @@ export function PresetPanel({ config, onChange, onPartialChange }: PresetPanelPr
               unit="%"
               size={84}
             />
+            {((config.logoShape ?? "original") === "rounded" ||
+              (config.logoPlateShape ?? "rounded") === "rounded") && (
+              <Dial
+                value={config.logoRadius ?? 15}
+                min={0}
+                max={50}
+                step={1}
+                onChange={(logoRadius) => onPartialChange({ logoRadius })}
+                label={t.qrControls.logoRadius}
+                unit="%"
+                size={84}
+              />
+            )}
+            <Dial
+              value={config.logoPadding ?? 15}
+              min={0}
+              max={40}
+              step={1}
+              onChange={(logoPadding) => onPartialChange({ logoPadding })}
+              label={t.qrControls.logoPadding}
+              unit="%"
+              size={84}
+            />
+            <Dial
+              value={config.logoBorderWidth ?? 0}
+              min={0}
+              max={12}
+              step={1}
+              onChange={(logoBorderWidth) => onPartialChange({ logoBorderWidth })}
+              label={t.qrControls.logoBorder}
+              unit="%"
+              size={84}
+            />
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 }

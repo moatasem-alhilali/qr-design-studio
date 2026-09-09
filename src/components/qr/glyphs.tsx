@@ -1,4 +1,6 @@
-import type { CornerStyle, ModuleStyle } from "@/lib/qr-engine";
+import { useId } from "react";
+
+import type { CornerStyle, LogoPlateShape, LogoShape, ModuleStyle } from "@/lib/qr-engine";
 
 /**
  * Type specimens for the shape pickers.
@@ -107,6 +109,86 @@ export function CornerGlyph({ style }: { style: CornerStyle }) {
         <path
           d={`M ${C} ${C - 3.4} Q ${C + 3.4} ${C} ${C} ${C + 3.4} Q ${C - 3.4} ${C} ${C} ${C - 3.4} Z`}
           fill="currentColor"
+        />
+      )}
+    </svg>
+  );
+}
+
+const LOGO_INSET = 2;
+const LOGO_SIDE = BOX - LOGO_INSET * 2;
+
+/**
+ * A stand-in photograph — sky, sun, hillside. The logo pickers show what
+ * happens to *artwork*, so the chip has to contain something that can visibly
+ * be cropped; an abstract outline would not read as a cut at all.
+ */
+function pictureMotif(top: number, height: number) {
+  const bottom = top + height;
+  const horizon = top + height * 0.55;
+  return (
+    <>
+      <rect x={LOGO_INSET} y={top} width={LOGO_SIDE} height={height} fill="currentColor" opacity="0.2" />
+      <circle cx={C + 4.2} cy={top + height * 0.28} r={height * 0.14} fill="currentColor" />
+      <path
+        d={`M ${LOGO_INSET} ${bottom} L ${C - 2.6} ${horizon - height * 0.16} L ${C + 1.6} ${horizon + height * 0.14} L ${C + 4.4} ${horizon - height * 0.04} L ${BOX - LOGO_INSET} ${bottom} Z`}
+        fill="currentColor"
+      />
+    </>
+  );
+}
+
+function logoCutShape(shape: LogoShape) {
+  if (shape === "circle") return <circle cx={C} cy={C} r={LOGO_SIDE / 2} />;
+  return (
+    <rect
+      x={LOGO_INSET}
+      y={LOGO_INSET}
+      width={LOGO_SIDE}
+      height={LOGO_SIDE}
+      rx={shape === "rounded" ? 5 : 0}
+    />
+  );
+}
+
+export function LogoShapeGlyph({ shape }: { shape: LogoShape }) {
+  const clipId = useId();
+
+  // "original" keeps the whole picture, so it is shown letterboxed and uncut —
+  // the bars are the point, they are what the other three shapes remove.
+  if (shape === "original") {
+    return (
+      <svg viewBox={`0 0 ${BOX} ${BOX}`} className="h-[22px] w-[22px]" aria-hidden>
+        {pictureMotif(5.5, 11)}
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox={`0 0 ${BOX} ${BOX}`} className="h-[22px] w-[22px]" aria-hidden>
+      <defs>
+        <clipPath id={clipId}>{logoCutShape(shape)}</clipPath>
+      </defs>
+      <g clipPath={`url(#${clipId})`}>{pictureMotif(LOGO_INSET, LOGO_SIDE)}</g>
+    </svg>
+  );
+}
+
+export function PlateShapeGlyph({ shape }: { shape: LogoPlateShape }) {
+  const stroke = { fill: "none", stroke: "currentColor", strokeWidth: 2.4 } as const;
+
+  return (
+    <svg viewBox={`0 0 ${BOX} ${BOX}`} className="h-[22px] w-[22px]" aria-hidden>
+      {shape === "circle" ? (
+        <circle cx={C} cy={C} r={LOGO_SIDE / 2 - 1.2} {...stroke} />
+      ) : (
+        <rect
+          x={LOGO_INSET + 1.2}
+          y={LOGO_INSET + 1.2}
+          width={LOGO_SIDE - 2.4}
+          height={LOGO_SIDE - 2.4}
+          rx={shape === "rounded" ? 4.8 : 0}
+          {...stroke}
         />
       )}
     </svg>
