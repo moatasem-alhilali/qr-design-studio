@@ -20,6 +20,10 @@ interface ActivePage {
   url: string | null;
   title: string;
   startedAtMs: number;
+  /** Milliseconds the page has been visible, excluding hidden stretches. */
+  engagedMs: number;
+  /** When the current visible stretch began, or null while hidden. */
+  visibleSinceMs: number | null;
 }
 
 const SESSION_STARTED_KEY = "qr_design_studio_analytics_session_started:v1";
@@ -35,11 +39,22 @@ export default function VisitorAnalyticsTracker() {
     [location.hash, location.pathname, location.search],
   );
 
+  /** Folds the open visible stretch into the running engaged total. */
+  const settleEngagement = useCallback((page: ActivePage, now: number): number => {
+    if (page.visibleSinceMs !== null) {
+      page.engagedMs += now - page.visibleSinceMs;
+      page.visibleSinceMs = null;
+    }
+    return page.engagedMs;
+  }, []);
+
   const leaveActivePage = useCallback((): void => {
     const page = activePage.current;
     if (!page) return;
 
-    const durationSeconds = Math.max(0, Math.round((Date.now() - page.startedAtMs) / 1000));
+    const now = Date.now();
+    const durationSeconds = Math.max(0, Math.round((now - page.startedAtMs) / 1000));
+    const engagedSeconds = Math.max(0, Math.round(settleEngagement(page, now) / 1000));
     activePage.current = null;
 
     trackAnalyticsEvent({
@@ -48,10 +63,11 @@ export default function VisitorAnalyticsTracker() {
       url: page.url,
       title: page.title,
       durationSeconds,
+      engagedSeconds,
       scrollDepth: maxScrollDepth.current,
       metadata: safeAnalyticsMetadata(),
     });
-  }, []);
+  }, [settleEngagement]);
 
   useEffect(() => {
     const onAccepted = () => setConsented(true);
@@ -109,12 +125,16 @@ export default function VisitorAnalyticsTracker() {
     maxScrollDepth.current = 0;
 
     const enteredAt = new Date().toISOString();
+    const openedAt = Date.now();
     activePage.current = {
       key: pageKey,
       path: location.pathname,
       url: currentUrl,
       title: document.title,
-      startedAtMs: Date.now(),
+      startedAtMs: openedAt,
+      engagedMs: 0,
+      // A page opened in a background tab is not being read yet.
+      visibleSinceMs: document.visibilityState === "visible" ? openedAt : null,
     };
 
     trackAnalyticsEvent({
@@ -129,6 +149,30 @@ export default function VisitorAnalyticsTracker() {
       metadata: safeAnalyticsMetadata(),
     });
   }, [consented, leaveActivePage, location.pathname, location.search, pageKey]);
+
+  /*
+    Engaged time. Wall-clock duration counts a tab left open behind a closed
+    laptop lid as an hour of rapt attention, so the clock only runs while the
+    page is actually visible.
+  */
+  useEffect(() => {
+    if (!consented) return;
+
+    const onVisibilityChange = () => {
+      const page = activePage.current;
+      if (!page) return;
+
+      if (document.visibilityState === "visible") {
+        page.visibleSinceMs = Date.now();
+      } else {
+        settleEngagement(page, Date.now());
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [consented, settleEngagement]);
 
   useEffect(() => {
     if (!consented) return;

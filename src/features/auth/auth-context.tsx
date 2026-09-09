@@ -10,6 +10,8 @@ import {
   type LoginInput,
   type RegisterInput,
 } from "@/features/auth/api/auth-api";
+import { setAnalyticsIdentity } from "@/features/analytics/api/track-analytics";
+import { trackProductEvent } from "@/features/analytics/services/product-events";
 import {
   clearSession,
   readCachedUser,
@@ -77,6 +79,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  /*
+    Analytics is told the token, never the user. The server resolves who that
+    is; the client stating its own identity on a public endpoint would be worth
+    nothing.
+  */
+  useEffect(() => {
+    setAnalyticsIdentity(token);
+  }, [token]);
+
   const adoptSession = useCallback((nextToken: string, nextUser: AuthUser) => {
     storeSession(nextToken, nextUser);
     setToken(nextToken);
@@ -88,7 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback(
     async (input: RegisterInput) => {
       const session = await registerRequest(input);
-      return adoptSession(session.token, session.user);
+      const adopted = adoptSession(session.token, session.user);
+      trackProductEvent("account_registered");
+      return adopted;
     },
     [adoptSession],
   );
@@ -96,7 +109,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (input: LoginInput) => {
       const session = await loginRequest(input);
-      return adoptSession(session.token, session.user);
+      const adopted = adoptSession(session.token, session.user);
+      trackProductEvent("account_signed_in");
+      return adopted;
     },
     [adoptSession],
   );

@@ -18,6 +18,7 @@ import {
   parseCsvRows,
   parsePastedRows,
 } from '@/features/batch/services/batch-rows';
+import { trackProductEvent } from '@/features/analytics/services/product-events';
 import { useI18n } from '@/shared/i18n/i18n';
 
 export default function BatchPage() {
@@ -66,6 +67,7 @@ export default function BatchPage() {
     setGenerating(true);
     try {
       const zipBlob = await generateBatchZip(rows, updateRow, activeDesign);
+      trackProductEvent('batch_generated', { rows: rows.length, output: 'zip' });
       downloadBlob(zipBlob, 'qr-codes-batch.zip');
       toast.success(t.batch.batchSuccess);
     } catch {
@@ -80,6 +82,7 @@ export default function BatchPage() {
     setSheeting(true);
     try {
       const result = await generateBatchPrintSheet(rows, defaultPrintSheetOptions, activeDesign);
+      trackProductEvent('batch_generated', { rows: rows.length, output: 'print-sheet', pages: result.pages });
       toast.success(`${t.home.sheetDone} — ${result.placed} / ${result.pages}`);
     } catch {
       toast.error(t.home.sheetTooSmall);

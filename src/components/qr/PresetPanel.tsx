@@ -7,6 +7,7 @@ import { Dial } from "@/components/workshop/Dial";
 import { InkWell } from "@/components/workshop/InkWell";
 import { Tool } from "@/components/workshop/Tool";
 import { LogoShapeGlyph, PlateShapeGlyph } from "@/components/qr/glyphs";
+import { trackProductEvent, trackSettledChoice } from "@/features/analytics/services/product-events";
 import { translateQRPreset, useI18n } from "@/shared/i18n/i18n";
 
 const logoShapes: LogoShape[] = ["original", "square", "rounded", "circle"];
@@ -28,6 +29,11 @@ export function PresetPanel({ config, onChange, onPartialChange }: PresetPanelPr
     const reader = new FileReader();
     reader.onload = () => {
       onPartialChange({ logoUrl: reader.result as string, errorCorrection: "H" });
+      // Size and type only — the image itself never leaves the browser.
+      trackProductEvent("logo_uploaded", {
+        fileType: file.type || "unknown",
+        fileKb: Math.round(file.size / 1024),
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -52,7 +58,10 @@ export function PresetPanel({ config, onChange, onPartialChange }: PresetPanelPr
               <button
                 key={preset.name}
                 type="button"
-                onClick={() => onChange(applyPreset(config, preset))}
+                onClick={() => {
+                  onChange(applyPreset(config, preset));
+                  trackSettledChoice("preset_applied", { preset: preset.name });
+                }}
                 title={translated.description}
                 className="group flex items-stretch gap-0 overflow-hidden rounded-[3px] text-start transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5"
                 style={{
@@ -135,7 +144,10 @@ export function PresetPanel({ config, onChange, onPartialChange }: PresetPanelPr
                 <Tool
                   key={value}
                   on={(config.logoShape ?? "original") === value}
-                  onClick={() => onPartialChange({ logoShape: value })}
+                  onClick={() => {
+                    onPartialChange({ logoShape: value });
+                    trackSettledChoice("logo_styled", { shape: value });
+                  }}
                 >
                   <LogoShapeGlyph shape={value} />
                   {t.values.logoShapes[value]}

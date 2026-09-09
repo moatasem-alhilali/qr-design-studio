@@ -23,6 +23,7 @@ import { Stamp } from "@/components/workshop/Stamp";
 import { ColourBar } from "@/components/workshop/InkWell";
 import { PrintSheetPanel } from "@/components/qr/PrintSheetPanel";
 import { exportFramedSvg, getFrameMetrics, getTypography, renderFramedCanvas, scaleFrameConfig, withAlpha } from "@/components/code/frame-utils";
+import { trackProductEvent } from "@/features/analytics/services/product-events";
 import { useI18n } from "@/shared/i18n/i18n";
 
 interface QRPreviewProps {
@@ -112,20 +113,33 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
     [isExporting, overflowBytes],
   );
 
+  /** Shared shape for every export event, so the dashboard can group them. */
+  const exportProps = (format: string) => ({
+    format,
+    dataType: config.dataType,
+    moduleStyle: config.moduleStyle,
+    hasLogo: Boolean(config.logoUrl),
+    hasFrame,
+    size: config.size,
+  });
+
   const handleDownloadPNG = () =>
     void runExport(async () => {
       const { canvas } = await buildExportCanvas();
       exportCanvasAsPNG(canvas, "qrcode.png");
+      trackProductEvent("export_completed", exportProps("png"));
     });
 
   const handleDownloadPDF = () =>
     void runExport(async () => {
       if (pdfIsVector && matrixRef.current) {
         await exportQRAsVectorPDF(matrixRef.current, config, "qrcode.pdf");
+        trackProductEvent("export_completed", exportProps("pdf-vector"));
         return;
       }
       const { canvas, logicalWidth, logicalHeight } = await buildExportCanvas();
       exportCanvasAsPDF(canvas, "qrcode.pdf", { logicalWidth, logicalHeight });
+      trackProductEvent("export_completed", exportProps("pdf-raster"));
     });
 
   const handleDownloadSVG = () => {
@@ -134,6 +148,7 @@ export function QRPreview({ config, frame }: QRPreviewProps) {
       ? exportFramedSvg(exportCanvasAsSVG(matrixRef.current, config), frame, config.size, config.size)
       : exportCanvasAsSVG(matrixRef.current, config);
     downloadSVG(svg, "qrcode.svg");
+    trackProductEvent("export_completed", exportProps("svg"));
   };
 
   const blocked = overflowBytes !== null;

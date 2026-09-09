@@ -13,6 +13,7 @@ import {
 import type { DesignSnapshot } from "@/features/designer/hooks/useDesignerState";
 import { ProjectShelf } from "@/features/projects/components/project-shelf";
 import { Tool } from "@/components/workshop/Tool";
+import { trackProductEvent } from "@/features/analytics/services/product-events";
 import { useI18n } from "@/shared/i18n/i18n";
 
 interface JobTicketPanelProps {
@@ -47,6 +48,7 @@ export function JobTicketPanel({ config, frame, onLoad }: JobTicketPanelProps) {
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
+      trackProductEvent("share_link_copied", { dataType: config.dataType, hasLogo: designHasLogo(config) });
       toast.success(t.home.linkCopied);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {

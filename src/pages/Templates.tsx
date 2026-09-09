@@ -5,6 +5,7 @@ import {
   getTemplatesByCategory,
 } from '@/features/templates/services/template-catalog';
 import { ColourBar } from '@/components/workshop/InkWell';
+import { trackProductEvent } from '@/features/analytics/services/product-events';
 import { translateTemplate, translateTemplateCategory, useI18n } from '@/shared/i18n/i18n';
 
 const categories = getTemplateCategories();
@@ -47,7 +48,13 @@ export default function Templates() {
                 <button
                   key={template.id}
                   type="button"
-                  onClick={() => applyTemplate(template)}
+                  onClick={() => {
+                    applyTemplate(template);
+                    trackProductEvent('template_applied', {
+                      template: template.id,
+                      category: template.category,
+                    });
+                  }}
                   className="sheet group relative flex overflow-hidden text-start transition-transform duration-150 hover:-translate-y-1 focus-visible:-translate-y-1"
                 >
                   <span className="w-1.5 shrink-0" style={{ background: ink }} aria-hidden />

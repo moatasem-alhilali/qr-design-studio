@@ -19,6 +19,13 @@ export interface AnalyticsPayload {
   durationSeconds?: number | null;
   scrollDepth?: number | null;
   eventName?: string | null;
+  /** Stamped once per event so a retried request cannot double count it. */
+  eventId?: string | null;
+  occurredAt?: string | null;
+  /** The event's own payload. Scalars only; never design content. */
+  props?: Record<string, string | number | boolean | null>;
+  /** Seconds the page was actually visible, as opposed to merely open. */
+  engagedSeconds?: number | null;
   utm?: {
     source?: string | null;
     medium?: string | null;
@@ -136,6 +143,19 @@ export function referrerAnalyticsUrl(): string | null {
   return safeUrl(document.referrer);
 }
 
+/**
+ * Set by the auth layer while somebody is signed in.
+ *
+ * The token is sent so the *server* can attribute a session to an account.
+ * The client never states a user id: this endpoint is public, and a
+ * self-reported identity is a self-reported lie.
+ */
+let bearerToken: string | null = null;
+
+export function setAnalyticsIdentity(token: string | null): void {
+  bearerToken = token;
+}
+
 export function trackAnalyticsEvent(payload: AnalyticsPayload): void {
   if (typeof window === "undefined" || !hasAnalyticsConsent()) return;
 
@@ -170,6 +190,7 @@ export function trackAnalyticsEvent(payload: AnalyticsPayload): void {
       headers: {
         Accept: "application/json",
         "Content-Type": "application/json",
+        ...(bearerToken ? { Authorization: `Bearer ${bearerToken}` } : {}),
       },
       body,
       keepalive: true,

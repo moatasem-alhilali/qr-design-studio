@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { trackProductEvent } from "@/features/analytics/services/product-events";
 import { useAuth } from "@/features/auth/auth-context";
 import {
   createProject,
@@ -217,6 +218,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       });
       setActiveProjectId(project.id);
       setConflict(false);
+      trackProductEvent("project_opened", { dataType: project.dataType ?? "unknown" });
       return project.payload;
     },
     [token, user],
@@ -234,6 +236,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       });
       setActiveProjectId(project.id);
       setConflict(false);
+      trackProductEvent("project_created", { dataType: project.dataType ?? "unknown" });
       await refresh();
       return project;
     },

@@ -597,7 +597,7 @@ const translations = {
     analyticsConsent: {
       title: "Privacy-friendly analytics",
       description:
-        "Help improve QR Design Studio with anonymous visit analytics. QR content, logos, exports, and private design data are never stored.",
+        "Help improve QR Design Studio by sharing which features get used. Visits are anonymous while you are signed out, and linked to your account while you are signed in. QR content, logos, exports, and private design data are never stored.",
       allow: "Allow",
       notNow: "Not now",
     },
@@ -1025,7 +1025,7 @@ const translations = {
     analyticsConsent: {
       title: "تحليلات تراعي الخصوصية",
       description:
-        "ساعدنا في تحسين استوديو تصميم QR عبر تحليلات زيارات مجهولة. لا يتم حفظ محتوى QR أو الشعارات أو الملفات المصدرة أو بيانات التصميم الخاصة.",
+        "ساعدنا في تحسين استوديو تصميم QR بمعرفة الميزات المستخدمة. الزيارات مجهولة ما دمت غير مسجّل دخول، وتُربط بحسابك عند تسجيل الدخول. لا يُحفظ محتوى QR ولا الشعارات ولا الملفات المصدَّرة ولا بيانات التصميم الخاصة.",
       allow: "السماح",
       notNow: "ليس الآن",
     },

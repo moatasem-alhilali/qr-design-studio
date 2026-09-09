@@ -7,6 +7,7 @@ import { isVerificationSupported, verifyQR, type VerifyResult } from "@/lib/qr-v
 import { FrameConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Stamp } from "@/components/workshop/Stamp";
+import { trackProductEvent } from "@/features/analytics/services/product-events";
 import { translateReliabilityGrade, translateReliabilityText, useI18n } from "@/shared/i18n/i18n";
 
 interface ScanReliabilityPanelProps {
@@ -137,7 +138,13 @@ export function ScanReliabilityPanel({ config, frame, onChange }: ScanReliabilit
           <Stamp
             solid
             disabled={tuned}
-            onClick={() => onChange(tuning.updates)}
+            onClick={() => {
+              onChange(tuning.updates);
+              trackProductEvent("scan_tuned", {
+                fixes: tuning.applied.join(","),
+                scoreBefore: result.score,
+              });
+            }}
             className="w-full disabled:opacity-45"
           >
             {tuned ? t.qrControls.alreadyTuned : t.qrControls.tuneForSpeed}

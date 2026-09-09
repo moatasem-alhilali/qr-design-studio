@@ -13,6 +13,7 @@ import {
 import { Tool } from "@/components/workshop/Tool";
 import { Dial } from "@/components/workshop/Dial";
 import { Stamp } from "@/components/workshop/Stamp";
+import { trackProductEvent } from "@/features/analytics/services/product-events";
 import { useI18n } from "@/shared/i18n/i18n";
 
 const PAGE_SIZES: PageSize[] = ["a4", "letter", "a3"];
@@ -41,6 +42,7 @@ export function PrintSheetPanel({ config }: { config: QRConfig }) {
     setBusy(true);
     try {
       const result = await exportPrintSheet({ items: [{ config }], options, copies: plan.perPage });
+      trackProductEvent("print_sheet_created", { placed: result.placed });
       toast.success(`${t.home.sheetDone} — ${result.placed}`);
     } catch {
       toast.error(t.home.sheetTooSmall);

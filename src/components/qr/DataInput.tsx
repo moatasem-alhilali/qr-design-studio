@@ -3,6 +3,7 @@ import { CalendarClock, Link, Mail, MapPin, MessageCircle, MessageSquare, Phone,
 import { DataType, QRConfig } from "@/lib/qr-engine";
 import type { QRFields, WifiEncryption } from "@/lib/qr-payloads";
 import { Tool } from "@/components/workshop/Tool";
+import { trackSettledChoice } from "@/features/analytics/services/product-events";
 import { useI18n } from "@/shared/i18n/i18n";
 
 const dataTypes: { value: DataType; icon: React.ElementType }[] = [
@@ -101,7 +102,10 @@ export function DataInput({ config, onChange }: DataInputProps) {
               key={value}
               on={config.dataType === value}
               // Clearing the payload avoids carrying a phone number into a URL.
-              onClick={() => onChange({ dataType: value, data: "" })}
+              onClick={() => {
+                onChange({ dataType: value, data: "" });
+                trackSettledChoice("data_type_selected", { dataType: value });
+              }}
             >
               <Icon className="h-4 w-4" />
               {t.values.dataTypes[value]}
