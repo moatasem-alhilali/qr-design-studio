@@ -53,17 +53,16 @@ interface ProjectsContextValue {
 
 const ProjectsContext = createContext<ProjectsContextValue | null>(null);
 
-/** Autosave pushes no faster than this. */
-const PUSH_DELAY_MS = 2500;
+/*
+  Autosave interval. A design carries its logo as an embedded data URL, so a
+  push can be close to a megabyte — at a couple of seconds per edit that was
+  saturating the connection and making the studio feel slow. Saves are rare
+  events from the user's point of view; the wait costs nothing and the local
+  autosave already holds the work in the meantime.
+*/
+const PUSH_DELAY_MS = 10000;
 
-export function ProjectsProvider({
-  children,
-  newProjectName,
-}: {
-  children: ReactNode;
-  /** Name given to work that had no project yet. Localised by the caller. */
-  newProjectName: string;
-}) {
+export function ProjectsProvider({ children }: { children: ReactNode }) {
   const { token, user, signedIn } = useAuth();
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -76,6 +75,8 @@ export function ProjectsProvider({
   const pendingRef = useRef<ProjectPayload | null>(null);
   const timerRef = useRef<number | null>(null);
   const syncedForRef = useRef<number | null>(null);
+  // A push in flight blocks the next one, so a slow save cannot pile up.
+  const inFlightRef = useRef(false);
 
   const refresh = useCallback(async () => {
     if (!token) return;
@@ -108,12 +109,7 @@ export function ProjectsProvider({
       const payload = pendingRef.current;
       if (payload) {
         try {
-          const outcome = await syncDesignOnSignIn({
-            token,
-            userId: user.id,
-            payload,
-            fallbackName: newProjectName,
-          });
+          const outcome = await syncDesignOnSignIn({ token, userId: user.id, payload });
           if (cancelled) return;
           setLastSync(outcome);
           if (outcome.kind === "created" || outcome.kind === "updated") {
@@ -132,7 +128,7 @@ export function ProjectsProvider({
     return () => {
       cancelled = true;
     };
-  }, [newProjectName, refresh, signedIn, token, user]);
+  }, [refresh, signedIn, token, user]);
 
   // Signing out drops the link so the next account starts clean.
   useEffect(() => {
@@ -153,7 +149,9 @@ export function ProjectsProvider({
 
       const fingerprint = fingerprintDesign(payload.config, payload.frame);
       if (!force && state.syncedFingerprint === fingerprint) return;
+      if (inFlightRef.current) return;
 
+      inFlightRef.current = true;
       setSaving(true);
       try {
         const project = await saveProject(token, id, {
@@ -179,6 +177,7 @@ export function ProjectsProvider({
         }
         // Offline or anything else: the local autosave already holds the work.
       } finally {
+        inFlightRef.current = false;
         setSaving(false);
       }
     },

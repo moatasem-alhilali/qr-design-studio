@@ -15,11 +15,9 @@ import * as api from "@/features/projects/api/projects-api";
  */
 
 vi.mock("@/features/projects/api/projects-api", () => ({
-  createProject: vi.fn(),
   saveProject: vi.fn(),
 }));
 
-const createProject = vi.mocked(api.createProject);
 const saveProject = vi.mocked(api.saveProject);
 
 const edited = {
@@ -65,7 +63,7 @@ describe("design fingerprint", () => {
 });
 
 describe("sync on sign-in", () => {
-  const input = { token: "t", userId: 1, fallbackName: "Local design" };
+  const input = { token: "t", userId: 1 };
 
   it("saves nothing when the design was never touched", async () => {
     const outcome = await syncDesignOnSignIn({
@@ -74,19 +72,17 @@ describe("sync on sign-in", () => {
     });
 
     expect(outcome).toEqual({ kind: "pristine" });
-    expect(createProject).not.toHaveBeenCalled();
     expect(saveProject).not.toHaveBeenCalled();
   });
 
-  it("turns unlinked local work into a new project", async () => {
-    createProject.mockResolvedValue(project(7));
-
+  it("reports unlinked local work instead of inventing a project for it", async () => {
     const outcome = await syncDesignOnSignIn({ ...input, payload: edited });
 
-    expect(outcome).toMatchObject({ kind: "created" });
-    expect(createProject).toHaveBeenCalledWith("t", { name: "Local design", payload: edited });
-    // The link is recorded, so the next edit updates instead of duplicating.
-    expect(readSyncState()).toMatchObject({ projectId: 7, ownerUserId: 1 });
+    // Signing in used to mint a project here, which is what filled the rack
+    // with duplicate throwaway designs.
+    expect(outcome).toEqual({ kind: "unsaved" });
+    expect(saveProject).not.toHaveBeenCalled();
+    expect(readSyncState().projectId).toBeNull();
   });
 
   it("pushes edits into the project they came from", async () => {
@@ -101,7 +97,6 @@ describe("sync on sign-in", () => {
     const outcome = await syncDesignOnSignIn({ ...input, payload: edited });
 
     expect(outcome).toMatchObject({ kind: "updated" });
-    expect(createProject).not.toHaveBeenCalled();
     expect(saveProject).toHaveBeenCalledWith("t", 7, {
       payload: edited,
       expectedUpdatedAt: "2026-09-09T09:00:00.000Z",
@@ -120,7 +115,6 @@ describe("sync on sign-in", () => {
 
     expect(outcome).toEqual({ kind: "unchanged", projectId: 7 });
     expect(saveProject).not.toHaveBeenCalled();
-    expect(createProject).not.toHaveBeenCalled();
   });
 
   it("ignores a link left behind by a different account", async () => {
@@ -131,13 +125,12 @@ describe("sync on sign-in", () => {
       syncedUpdatedAt: "2026-09-09T09:00:00.000Z",
       ownerUserId: 1,
     });
-    createProject.mockResolvedValue(project(9));
-
     const outcome = await syncDesignOnSignIn({ ...input, userId: 2, payload: edited });
 
-    expect(outcome).toMatchObject({ kind: "created" });
+    expect(outcome).toEqual({ kind: "unsaved" });
     expect(saveProject).not.toHaveBeenCalled();
-    expect(readSyncState()).toMatchObject({ projectId: 9, ownerUserId: 2 });
+    // The other account's link is dropped rather than written into.
+    expect(readSyncState()).toMatchObject({ projectId: null, ownerUserId: 2 });
   });
 
   it("reports a conflict without overwriting the other device", async () => {
@@ -156,7 +149,7 @@ describe("sync on sign-in", () => {
     expect(readSyncState()).toMatchObject({ projectId: 7, syncedFingerprint: "stale" });
   });
 
-  it("re-homes the design when its project was deleted elsewhere", async () => {
+  it("falls back to unsaved when its project was deleted elsewhere", async () => {
     writeSyncState({
       projectId: 7,
       syncedFingerprint: "stale",
@@ -164,13 +157,12 @@ describe("sync on sign-in", () => {
       ownerUserId: 1,
     });
     saveProject.mockRejectedValue(new ApiError("gone", 404, "PROJECT_NOT_FOUND"));
-    createProject.mockResolvedValue(project(11));
 
     const outcome = await syncDesignOnSignIn({ ...input, payload: edited });
 
-    expect(outcome).toMatchObject({ kind: "created" });
-    expect(createProject).toHaveBeenCalled();
-    expect(readSyncState()).toMatchObject({ projectId: 11 });
+    // The design is still on this device; it just has nowhere to go yet.
+    expect(outcome).toEqual({ kind: "unsaved" });
+    expect(readSyncState().projectId).toBeNull();
   });
 
   it("keeps the local design and the link when the API is unreachable", async () => {

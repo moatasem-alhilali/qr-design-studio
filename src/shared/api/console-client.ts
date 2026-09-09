@@ -10,7 +10,19 @@
  * session never surfaces as "something went wrong".
  */
 
-const DEFAULT_API_URL = "https://console.moatasem.dev";
+/**
+ * Where the console lives.
+ *
+ * Empty on purpose: with no base, every call goes to a same-origin path and
+ * the hosting layer forwards it, so the backend host never lands in the
+ * bundle or in a visitor's network tab. `VITE_API_URL` overrides it for a
+ * build that has to call the API directly.
+ *
+ * This is tidiness, not a security boundary — anything the page can call, a
+ * visitor can call. It keeps the origin out of the client and lets the backend
+ * move without a rebuild.
+ */
+const API_PREFIX = "/api/v1";
 
 /** Field name -> messages, as Laravel's validator returns them. */
 export type FieldErrors = Record<string, string[]>;
@@ -50,9 +62,9 @@ export class ApiError extends Error {
 }
 
 export function consoleEndpoint(path: string): string {
-  const configured = (import.meta.env.VITE_API_URL as string | undefined) || DEFAULT_API_URL;
-  const base = configured.replace(/\/+$/, "");
-  const prefix = base.endsWith("/api/v1") ? base : `${base}/api/v1`;
+  const configured = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  const base = configured ? configured.replace(/\/+$/, "") : "";
+  const prefix = base ? (base.endsWith(API_PREFIX) ? base : `${base}${API_PREFIX}`) : API_PREFIX;
 
   return `${prefix}/qr-design-studio/${path.replace(/^\/+/, "")}`;
 }

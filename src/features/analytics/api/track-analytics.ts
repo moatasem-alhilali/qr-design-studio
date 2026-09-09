@@ -44,7 +44,8 @@ export interface AnalyticsPayload {
   };
 }
 
-const DEFAULT_API_URL = "https://console.moatasem.dev";
+/** Same-origin by default. See `shared/api/console-client` for why. */
+const API_PREFIX = "/api/v1";
 const SENSITIVE_QUERY_PARAMS = new Set([
   "password",
   "pass",
@@ -61,12 +62,16 @@ const SENSITIVE_QUERY_PARAMS = new Set([
 ]);
 
 function analyticsEndpoint(): string {
-  const configured = (import.meta.env.VITE_API_URL as string | undefined) || DEFAULT_API_URL;
-  const base = configured.replace(/\/+$/, "");
+  const configured = (import.meta.env.VITE_API_URL as string | undefined)?.trim();
+  const base = configured ? configured.replace(/\/+$/, "") : "";
+  const prefix = base ? (base.endsWith(API_PREFIX) ? base : `${base}${API_PREFIX}`) : API_PREFIX;
 
-  return base.endsWith("/api/v1")
-    ? `${base}/qr-design-studio/analytics/track`
-    : `${base}/api/v1/qr-design-studio/analytics/track`;
+  /*
+    "collect", not "track": content blockers match the word "track" in a URL,
+    so first-party analytics was being dropped in the browser before it was
+    ever sent. The backend answers on both paths.
+  */
+  return `${prefix}/qr-design-studio/analytics/collect`;
 }
 
 function safeUrl(value: string | null | undefined): string | null {

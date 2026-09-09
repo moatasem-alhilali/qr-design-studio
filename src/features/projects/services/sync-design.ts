@@ -1,9 +1,4 @@
-import {
-  createProject,
-  saveProject,
-  type Project,
-  type ProjectPayload,
-} from "@/features/projects/api/projects-api";
+import { saveProject, type Project, type ProjectPayload } from "@/features/projects/api/projects-api";
 import { fingerprintDesign, isPristineDesign } from "@/features/projects/services/design-fingerprint";
 import { readSyncState, writeSyncState, type SyncState } from "@/features/projects/services/sync-state";
 import { ApiError } from "@/shared/api/console-client";
@@ -11,15 +6,26 @@ import { ApiError } from "@/shared/api/console-client";
 /**
  * Reconciling the design on the bench with the account, on sign-in.
  *
- * The rule the whole module is built around: **local work is never discarded**.
- * When in doubt the design becomes a new project, because an extra project is
- * an annoyance while a lost design is the user's afternoon.
+ * Two rules, in this order:
+ *
+ * 1. Local work is never discarded.
+ * 2. Nothing is created behind the user's back. Signing in used to mint a
+ *    project called "Local design" on its own, which produced a rack of
+ *    near-identical throwaway projects nobody asked for. Unlinked work is now
+ *    *reported* as unsaved and waits for a name.
+ *
+ * Automatic writes happen only into a project the design already belongs to.
  */
 
 export type SyncOutcome =
   /** Nothing was worth saving — the design is still the untouched default. */
   | { kind: "pristine" }
-  /** Local work had no home, so it became a project. */
+  /**
+   * There is real local work that belongs to no project. Nothing was written;
+   * the UI offers to save it, and it stays on this device until the user does.
+   */
+  | { kind: "unsaved" }
+  /** Local work had no home and was explicitly given one. */
   | { kind: "created"; project: Project }
   /** Local edits were pushed into the project they belong to. */
   | { kind: "updated"; project: Project }
@@ -37,8 +43,6 @@ export interface SyncInput {
   token: string;
   userId: number;
   payload: ProjectPayload;
-  /** Used when local work has to become a new project. */
-  fallbackName: string;
 }
 
 function link(state: Partial<SyncState>): void {
@@ -68,21 +72,14 @@ export async function syncDesignOnSignIn(input: SyncInput): Promise<SyncOutcome>
   // A link belonging to another account says nothing about this one.
   const linkedId = state.ownerUserId === input.userId ? state.projectId : null;
 
-  try {
-    if (linkedId === null) {
-      const project = await createProject(input.token, {
-        name: input.fallbackName,
-        payload: input.payload,
-      });
-      link({
-        projectId: project.id,
-        syncedFingerprint: fingerprint,
-        syncedUpdatedAt: project.updatedAt,
-        ownerUserId: input.userId,
-      });
-      return { kind: "created", project };
-    }
+  if (linkedId === null) {
+    // Real work, no home. Say so and let the user name it; creating one here
+    // is what produced duplicate "Local design" projects on every sign-in.
+    link({ ownerUserId: input.userId });
+    return { kind: "unsaved" };
+  }
 
+  try {
     if (state.syncedFingerprint === fingerprint) {
       // Same bytes as the last push; re-uploading would only bump a timestamp.
       return { kind: "unchanged", projectId: linkedId };
@@ -109,21 +106,13 @@ export async function syncDesignOnSignIn(input: SyncInput): Promise<SyncOutcome>
 
       /*
         The linked project is gone — deleted from another device, or the link
-        is stale. The local design still exists and still matters, so it gets a
-        home of its own rather than being dropped on the floor.
+        is stale. The design itself is still on this device and still matters,
+        so the link is dropped and it goes back to being unsaved work rather
+        than silently reappearing as a new project.
       */
-      if (error.status === 404 && linkedId !== null) {
-        const project = await createProject(input.token, {
-          name: input.fallbackName,
-          payload: input.payload,
-        });
-        link({
-          projectId: project.id,
-          syncedFingerprint: fingerprint,
-          syncedUpdatedAt: project.updatedAt,
-          ownerUserId: input.userId,
-        });
-        return { kind: "created", project };
+      if (error.status === 404) {
+        link({ ownerUserId: input.userId });
+        return { kind: "unsaved" };
       }
     }
 

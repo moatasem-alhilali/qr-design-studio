@@ -11,6 +11,7 @@ import {
   readDesignTicket,
 } from "@/features/designer/services/design-file";
 import type { DesignSnapshot } from "@/features/designer/hooks/useDesignerState";
+import { ProjectShelf } from "@/features/projects/components/project-shelf";
 import { Tool } from "@/components/workshop/Tool";
 import { useI18n } from "@/shared/i18n/i18n";
 
@@ -55,6 +56,9 @@ export function JobTicketPanel({ config, frame, onLoad }: JobTicketPanelProps) {
   };
 
   return (
+    <div className="space-y-5">
+      <ProjectShelf config={config} frame={frame} />
+      <hr className="perf" />
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-2">
         <Tool wide onClick={() => downloadDesignTicket(config, frame)}>
@@ -86,6 +90,7 @@ export function JobTicketPanel({ config, frame, onLoad }: JobTicketPanelProps) {
       {designHasLogo(config) && (
         <p className="text-[11px] leading-snug text-ink-faint">{t.home.linkDropsLogo}</p>
       )}
+    </div>
     </div>
   );
 }
