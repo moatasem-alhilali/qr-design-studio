@@ -1,9 +1,10 @@
 import { ReactNode, useEffect, useRef } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Github, Languages, Layers, Moon, PlusCircle, Settings, Sparkles, Sun } from "lucide-react";
+import { Github, Languages, Layers, LogIn, LogOut, Moon, PlusCircle, Settings, Sparkles, Sun, UserRound } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { ColourBar } from "@/components/workshop/InkWell";
+import { useAuth } from "@/features/auth/auth-context";
 import { applyPageMeta } from "@/shared/seo/page-meta";
 import { useI18n } from "@/shared/i18n/i18n";
 import { useShift } from "@/shared/theme/use-shift";
@@ -19,6 +20,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const location = useLocation();
   const { direction, locale, t, toggleLocale } = useI18n();
   const { shift, toggleShift } = useShift();
+  const { loading: authLoading, logout, signedIn, user } = useAuth();
   const railRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -81,6 +83,37 @@ export function AppLayout({ children }: { children: ReactNode }) {
             </Link>
 
             <div className="flex items-center gap-2">
+              {/*
+                The account plate. It stays out of the numbered drawers below:
+                signing in is not a section of the studio, it is who is standing
+                at the bench.
+              */}
+              {!authLoading &&
+                (signedIn ? (
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="hidden items-center gap-1.5 px-1 text-[0.78rem] text-ink-mid sm:flex"
+                      title={user?.email}
+                    >
+                      <UserRound className="h-4 w-4 shrink-0" />
+                      <span className="max-w-[10rem] truncate font-medium text-ink">{user?.name}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void logout()}
+                      aria-label={t.auth.signOut}
+                      title={t.auth.signOut}
+                      className="tool px-3 py-2.5"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <Link to="/login" className="tool tool-wide px-3">
+                    <LogIn className="h-4 w-4" />
+                    {t.auth.signIn}
+                  </Link>
+                ))}
               <button
                 type="button"
                 onClick={toggleLocale}

@@ -23,6 +23,7 @@ src/
   pages/                     route components; should stay thin
   features/
     analytics/               consent, visitor/page-view tracking client
+    auth/                    account session, sign-in/sign-up forms, API client
     designer/                QR/barcode editor state workflow
     batch/                   batch row state, CSV parsing, ZIP generation
     templates/               template catalog and apply-template navigation
@@ -63,6 +64,8 @@ Current public routes:
 /templates    template picker
 /batch        batch QR generator
 /settings     local app settings/about
+/login        sign in to an account
+/register     create an account
 *             not found
 ```
 
@@ -103,10 +106,14 @@ feature, but keep reusable UI in `components/ui` or domain components under
 
 ## API Layer Rules
 
-This app is wired to one Laravel endpoint for privacy-friendly visit analytics:
+This app is wired to the Laravel console under one module prefix:
 
 ```txt
 POST {VITE_API_URL}/api/v1/qr-design-studio/analytics/track
+POST {VITE_API_URL}/api/v1/qr-design-studio/auth/register
+POST {VITE_API_URL}/api/v1/qr-design-studio/auth/login
+GET  {VITE_API_URL}/api/v1/qr-design-studio/auth/me       (bearer)
+POST {VITE_API_URL}/api/v1/qr-design-studio/auth/logout   (bearer)
 ```
 
 The API base defaults to `https://console.moatasem.dev` and can be overridden
@@ -139,6 +146,30 @@ banner is mounted once in `src/providers/AppProviders.tsx`.
 
 Analytics failures are intentionally swallowed. Visitors should never see a
 network or backend error because analytics failed.
+
+## Auth Workflow
+
+Accounts live in the Laravel `QrDesignStudio` module against the `qds_users`
+table, never against the console's own admin users. Sanctum issues a bearer
+token because the studio and the API sit on different domains, so a session
+cookie is not an option.
+
+Auth lives in:
+
+- `features/auth/api/auth-api.ts` for the typed client and `AuthApiError`.
+- `features/auth/services/auth-storage.ts` for token/user persistence.
+- `features/auth/auth-context.tsx` for `AuthProvider` and `useAuth`.
+- `features/auth/components/auth-form.tsx` for the shared sign-in/sign-up sheet.
+
+Rules:
+
+- A stored token is verified against `auth/me` on boot before it is trusted; a
+  rejection clears the session, but a network failure does not.
+- Rejection messages come from the API already worded in the user's language and
+  are shown as-is. Local copy only covers what the API cannot describe, such as
+  an unreachable server.
+- Analytics must stay anonymous. Do not send the account id, name, or email
+  through the analytics client.
 
 ## Batch Workflow
 
