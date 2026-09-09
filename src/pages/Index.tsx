@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Barcode, Layers3, Palette, QrCode, Redo2, ShieldCheck, Sparkles, SquareDashed, Ticket, Type, Undo2 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -16,6 +17,7 @@ import { JobTicketPanel } from "@/components/qr/JobTicketPanel";
 import { BenchDrawer } from "@/components/workshop/BenchDrawer";
 import { Tool } from "@/components/workshop/Tool";
 import { useDesignerState, type DesignType } from "@/features/designer/hooks/useDesignerState";
+import { useProjects } from "@/features/projects/projects-context";
 import { useI18n } from "@/shared/i18n/i18n";
 
 const Index = () => {
@@ -37,6 +39,17 @@ const Index = () => {
     canUndo,
     canRedo,
   } = useDesignerState();
+
+  const { recordDesign } = useProjects();
+
+  /*
+    Every edit is handed to the sync layer, which debounces and pushes it into
+    the open project. Signed out, it only remembers the design so that signing
+    in can decide what to do with it.
+  */
+  useEffect(() => {
+    recordDesign({ config, frame: frameConfig });
+  }, [config, frameConfig, recordDesign]);
 
   const isQR = designType === "qr";
 

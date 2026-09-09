@@ -91,13 +91,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
               {!authLoading &&
                 (signedIn ? (
                   <div className="flex items-center gap-2">
-                    <span
-                      className="hidden items-center gap-1.5 px-1 text-[0.78rem] text-ink-mid sm:flex"
-                      title={user?.email}
+                    <Link
+                      to="/profile"
+                      title={t.auth.myProjects}
+                      className="tool tool-wide px-3"
                     >
                       <UserRound className="h-4 w-4 shrink-0" />
-                      <span className="max-w-[10rem] truncate font-medium text-ink">{user?.name}</span>
-                    </span>
+                      <span className="hidden max-w-[9rem] truncate sm:inline">{user?.name}</span>
+                    </Link>
                     <button
                       type="button"
                       onClick={() => void logout()}

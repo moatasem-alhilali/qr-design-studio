@@ -6,6 +6,7 @@ import BatchPage from "@/pages/BatchPage";
 import Index from "@/pages/Index";
 import Login from "@/pages/Login";
 import NotFound from "@/pages/NotFound";
+import Profile from "@/pages/Profile";
 import Register from "@/pages/Register";
 import Settings from "@/pages/Settings";
 import Templates from "@/pages/Templates";
@@ -26,6 +27,7 @@ export function AppRoutes() {
         <Route path="/settings" element={withAppLayout(<Settings />)} />
         <Route path="/login" element={withAppLayout(<Login />)} />
         <Route path="/register" element={withAppLayout(<Register />)} />
+        <Route path="/profile" element={withAppLayout(<Profile />)} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
