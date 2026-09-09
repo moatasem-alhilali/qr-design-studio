@@ -24,7 +24,7 @@ function setCanonicalUrl(href: string) {
   }
 }
 
-const pageMeta: Record<Locale, Record<"home" | "templates" | "batch" | "settings", PageMeta>> = {
+const pageMeta: Record<Locale, Record<"home" | "templates" | "batch" | "settings" | "login" | "register" | "profile", PageMeta>> = {
   en: {
     home: {
       title: "QR Design Studio | QR Code And Barcode Generator",
@@ -45,6 +45,18 @@ const pageMeta: Record<Locale, Record<"home" | "templates" | "batch" | "settings
       title: "Settings | QR Design Studio",
       description:
         "Review local generation mode, export behavior, and app information for QR Design Studio.",
+    },
+    login: {
+      title: "Sign In | QR Design Studio",
+      description: "Sign in to keep your QR designs and projects on every device.",
+    },
+    register: {
+      title: "Create Account | QR Design Studio",
+      description: "Create a QR Design Studio account to save your designs as named projects.",
+    },
+    profile: {
+      title: "My Account | QR Design Studio",
+      description: "Your QR Design Studio account and every design saved to it.",
     },
   },
   ar: {
@@ -68,6 +80,18 @@ const pageMeta: Record<Locale, Record<"home" | "templates" | "batch" | "settings
       description:
         "راجع وضع الإنشاء المحلي وسلوك التصدير ومعلومات التطبيق في استوديو تصميم QR.",
     },
+    login: {
+      title: "تسجيل الدخول | استوديو تصميم QR",
+      description: "سجّل الدخول لتبقى تصاميمك ومشاريعك على كل أجهزتك.",
+    },
+    register: {
+      title: "إنشاء حساب | استوديو تصميم QR",
+      description: "أنشئ حسابًا في استوديو تصميم QR لتحفظ تصاميمك كمشاريع بأسماء.",
+    },
+    profile: {
+      title: "ملفي | استوديو تصميم QR",
+      description: "حسابك في استوديو تصميم QR وكل تصميم محفوظ فيه.",
+    },
   },
 };
 
@@ -82,6 +106,18 @@ export function getPageMeta(pathname: string, locale: Locale = DEFAULT_LOCALE): 
 
   if (pathname.startsWith("/settings")) {
     return pageMeta[locale].settings;
+  }
+
+  if (pathname.startsWith("/login")) {
+    return pageMeta[locale].login;
+  }
+
+  if (pathname.startsWith("/register")) {
+    return pageMeta[locale].register;
+  }
+
+  if (pathname.startsWith("/profile")) {
+    return pageMeta[locale].profile;
   }
 
   return pageMeta[locale].home;

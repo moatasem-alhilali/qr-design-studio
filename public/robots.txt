@@ -8,6 +8,7 @@ Disallow: /checkout
 Disallow: /cart
 Disallow: /login
 Disallow: /signup
+Disallow: /register
 Disallow: /dashboard
 Disallow: /r/
 Sitemap: https://qrcode.moatasem.dev/sitemap.xml
