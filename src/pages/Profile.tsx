@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { FolderOpen, Loader2, Pencil, Trash2, UserRound } from "lucide-react";
 
 import { useAuth } from "@/features/auth/auth-context";
 import { saveDesignLocally } from "@/features/designer/services/design-file";
+import { defaultConfig } from "@/lib/qr-engine";
+import { defaultFrameConfig } from "@/lib/types";
 import { useProjects } from "@/features/projects/projects-context";
 import { Stamp } from "@/components/workshop/Stamp";
 import { Tool } from "@/components/workshop/Tool";
@@ -19,13 +21,16 @@ import type { ProjectSummary } from "@/features/projects/api/projects-api";
 const Profile = () => {
   const { locale, t } = useI18n();
   const { signedIn, loading: authLoading, user } = useAuth();
-  const { projects, loading, activeProjectId, open, rename, remove, refresh, closeActive } = useProjects();
+  const { projects, loading, activeProjectId, open, create, rename, remove, refresh, closeActive } = useProjects();
   const navigate = useNavigate();
 
   const [renamingId, setRenamingId] = useState<number | null>(null);
   const [draftName, setDraftName] = useState("");
   const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [createBusy, setCreateBusy] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !signedIn) navigate("/login", { replace: true });
@@ -60,6 +65,30 @@ const Profile = () => {
       setError(t.projects.openFailed);
     } finally {
       setBusyId(null);
+    }
+  }
+
+  /*
+    A new project is created on the server first, with a blank design, and only
+    then handed to the studio. Just navigating to the studio used to leave the
+    previous project active, so its autosave kept writing into it.
+  */
+  async function handleCreate() {
+    const name = newName.trim();
+    if (!name || createBusy) return;
+    setCreateBusy(true);
+    setError(null);
+    try {
+      const payload = { config: defaultConfig, frame: defaultFrameConfig };
+      await create(name, payload);
+      saveDesignLocally(payload.config, payload.frame);
+      setCreating(false);
+      setNewName("");
+      navigate("/", { replace: true });
+    } catch {
+      setError(t.projects.saveFailed);
+    } finally {
+      setCreateBusy(false);
     }
   }
 
@@ -131,11 +160,43 @@ const Profile = () => {
       {/* The rack of saved designs. */}
       <div className="mt-6 flex items-end justify-between gap-3">
         <h2 className="plate-title text-[1.2rem] leading-none">{t.projects.title}</h2>
-        <Link to="/" className="tool tool-wide px-3">
-          <FolderOpen className="h-4 w-4" />
-          {t.projects.newProject}
-        </Link>
+        {!creating && (
+          <Tool wide onClick={() => setCreating(true)} className="px-3">
+            <FolderOpen className="h-4 w-4" />
+            {t.projects.newProject}
+          </Tool>
+        )}
       </div>
+
+      {creating && (
+        <div className="sheet-sunk mt-3 flex flex-wrap items-center gap-2 p-3">
+          <input
+            className="field max-w-xs flex-1"
+            value={newName}
+            autoFocus
+            disabled={createBusy}
+            placeholder={t.projects.namePlaceholder}
+            onChange={(event) => setNewName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") void handleCreate();
+              if (event.key === "Escape") setCreating(false);
+            }}
+            aria-label={t.projects.projectName}
+          />
+          <Tool onClick={() => void handleCreate()} disabled={createBusy || newName.trim().length === 0}>
+            {createBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : t.projects.save}
+          </Tool>
+          <Tool
+            onClick={() => {
+              setCreating(false);
+              setNewName("");
+            }}
+            disabled={createBusy}
+          >
+            {t.projects.cancel}
+          </Tool>
+        </div>
+      )}
 
       {error && (
         <p

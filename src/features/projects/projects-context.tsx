@@ -141,12 +141,25 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
     clearSyncState();
   }, [signedIn]);
 
+  /*
+    Drops a push that is still waiting on the timer. It must run every time the
+    active project changes: the waiting push carries the previous project's
+    design, and firing it after the switch wrote that design into the new one.
+  */
+  const cancelPending = useCallback(() => {
+    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    timerRef.current = null;
+    pendingRef.current = null;
+  }, []);
+
   const pushNow = useCallback(
-    async (payload: ProjectPayload, force: boolean) => {
+    async (payload: ProjectPayload, force: boolean, targetId?: number) => {
       if (!token || !user) return;
       const state = readSyncState();
       const id = state.ownerUserId === user.id ? state.projectId : null;
       if (id === null) return;
+      // The design was recorded for another project; never cross-write it.
+      if (targetId !== undefined && targetId !== id) return;
 
       const fingerprint = fingerprintDesign(payload.config, payload.frame);
       if (!force && state.syncedFingerprint === fingerprint) return;
@@ -190,10 +203,11 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       pendingRef.current = payload;
       if (!signedIn || activeProjectId === null || conflict) return;
 
+      const targetId = activeProjectId;
       if (timerRef.current !== null) window.clearTimeout(timerRef.current);
       timerRef.current = window.setTimeout(() => {
         timerRef.current = null;
-        void pushNow(payload, false);
+        void pushNow(payload, false, targetId);
       }, PUSH_DELAY_MS);
     },
     [activeProjectId, conflict, pushNow, signedIn],
@@ -209,6 +223,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
   const open = useCallback(
     async (id: number): Promise<ProjectPayload> => {
       if (!token || !user) throw new ApiError("unauthenticated", 401);
+      cancelPending();
       const project = await openProject(token, id);
       writeSyncState({
         projectId: project.id,
@@ -221,12 +236,13 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       trackProductEvent("project_opened", { dataType: project.dataType ?? "unknown" });
       return project.payload;
     },
-    [token, user],
+    [cancelPending, token, user],
   );
 
   const create = useCallback(
     async (name: string, payload: ProjectPayload): Promise<Project> => {
       if (!token || !user) throw new ApiError("unauthenticated", 401);
+      cancelPending();
       const project = await createProject(token, { name, payload });
       writeSyncState({
         projectId: project.id,
@@ -240,7 +256,7 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       await refresh();
       return project;
     },
-    [refresh, token, user],
+    [cancelPending, refresh, token, user],
   );
 
   const rename = useCallback(
@@ -260,18 +276,20 @@ export function ProjectsProvider({ children }: { children: ReactNode }) {
       await deleteProject(token, id);
       setProjects((current) => current.filter((item) => item.id !== id));
       if (activeProjectId === id) {
+        cancelPending();
         setActiveProjectId(null);
         clearSyncState();
       }
     },
-    [activeProjectId, token],
+    [activeProjectId, cancelPending, token],
   );
 
   const closeActive = useCallback(() => {
+    cancelPending();
     setActiveProjectId(null);
     setConflict(false);
     clearSyncState();
-  }, []);
+  }, [cancelPending]);
 
   const forceSaveActive = useCallback(
     async (payload: ProjectPayload) => {
