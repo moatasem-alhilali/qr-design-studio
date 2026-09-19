@@ -10,6 +10,7 @@ import {
   type QRConfig,
   type QRMatrix,
 } from "@/lib/qr-engine";
+import { finderOrigins, finderPath, hasSolidFinder } from "@/lib/qr-finder";
 
 /**
  * True vector PDF output.
@@ -244,6 +245,8 @@ export async function drawQRVector(
 
   if (!isGradient) pdf.setFillColor(solid.r, solid.g, solid.b);
 
+  const solidFinders = hasSolidFinder(config.cornerStyle);
+
   for (let row = 0; row < moduleCount; row++) {
     for (let col = 0; col < moduleCount; col++) {
       if (!matrix.modules[row][col]) continue;
@@ -262,10 +265,35 @@ export async function drawQRVector(
       }
 
       if (isFinder(row, col, moduleCount)) {
+        if (solidFinders) continue;
         drawFinder(pdf, x, y, cell, finderRing(row, col, moduleCount), config);
       } else {
         drawModule(pdf, x, y, cell, config.moduleStyle);
       }
+    }
+  }
+
+  // Finder patterns as whole shapes, matching the canvas and SVG. A gradient
+  // takes its colour at the finder's centre, as modules take it at theirs.
+  if (solidFinders) {
+    for (const [row, col] of finderOrigins(moduleCount)) {
+      if (isGradient) {
+        const nx = (symbolOrigin + (col + 3.5) * cell) / edge - 0.5;
+        const ny = (symbolOrigin + (row + 3.5) * cell) / edge - 0.5;
+        const c = mix(solid, second, nx * ux + ny * uy + 0.5);
+        pdf.setFillColor(c.r, c.g, c.b);
+      } else {
+        pdf.setFillColor(solid.r, solid.g, solid.b);
+      }
+      const x0 = originX + symbolOrigin + col * cell;
+      const y0 = originY + symbolOrigin + row * cell;
+      for (const c of finderPath(config.cornerStyle, x0, y0, cell)) {
+        if (c.op === "M") pdf.moveTo(c.x, c.y);
+        else if (c.op === "L") pdf.lineTo(c.x, c.y);
+        else if (c.op === "C") pdf.curveTo(c.x1, c.y1, c.x2, c.y2, c.x, c.y);
+        else pdf.close();
+      }
+      pdf.fillEvenOdd();
     }
   }
 

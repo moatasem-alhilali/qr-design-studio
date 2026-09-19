@@ -2,6 +2,7 @@ import qrcode from "qrcode-generator";
 import { jsPDF } from "jspdf";
 
 import { byteLength, defaultFields, formatQRPayload, type DataType, type QRFields } from "@/lib/qr-payloads";
+import { finderOrigins, finderPath, finderPathToSvg, hasSolidFinder, traceFinderOnCanvas } from "@/lib/qr-finder";
 
 /*
   qrcode-generator encodes byte mode with `charCodeAt(i) & 0xff`, truncating
@@ -344,6 +345,8 @@ export function renderQRToCanvas(
 
   ctx.fillStyle = fillStyle;
 
+  const solidFinders = hasSolidFinder(config.cornerStyle);
+
   // Draw modules
   for (let row = 0; row < moduleCount; row++) {
     for (let col = 0; col < moduleCount; col++) {
@@ -353,11 +356,20 @@ export function renderQRToCanvas(
       const y = origin + row * cellSize;
 
       if (isFinderPattern(row, col, moduleCount)) {
-        drawFinderModule(ctx, x, y, cellSize, row, col, moduleCount, config, fillStyle);
+        if (!solidFinders) drawFinderModule(ctx, x, y, cellSize, row, col, moduleCount, config, fillStyle);
       } else {
         ctx.fillStyle = fillStyle;
         drawModule(ctx, x, y, cellSize, config.moduleStyle);
       }
+    }
+  }
+
+  // Finder patterns as whole shapes, so a scanner locks on at once. See qr-finder.
+  if (solidFinders) {
+    ctx.fillStyle = fillStyle;
+    for (const [row, col] of finderOrigins(moduleCount)) {
+      traceFinderOnCanvas(ctx, finderPath(config.cornerStyle, origin + col * cellSize, origin + row * cellSize, cellSize));
+      ctx.fill("evenodd");
     }
   }
 
@@ -897,6 +909,14 @@ export function exportCanvasAsSVG(matrix: QRMatrix, config: QRConfig): string {
   }
 
   const fill = config.colorMode === "gradient" ? "url(#qrg)" : config.color1;
+  const solidFinders = hasSolidFinder(config.cornerStyle);
+
+  if (solidFinders) {
+    for (const [row, col] of finderOrigins(moduleCount)) {
+      const d = finderPathToSvg(finderPath(config.cornerStyle, origin + col * cellSize, origin + row * cellSize, cellSize));
+      svg += `<path d="${d}" fill-rule="evenodd" fill="${fill}"/>`;
+    }
+  }
 
   for (let row = 0; row < moduleCount; row++) {
     for (let col = 0; col < moduleCount; col++) {
@@ -910,6 +930,7 @@ export function exportCanvasAsSVG(matrix: QRMatrix, config: QRConfig): string {
       // Finder patterns follow the corner style, exactly as the canvas does.
       // Skipping this is what made SVG exports look different from the PNG.
       if (isFinderPattern(row, col, moduleCount)) {
+        if (solidFinders) continue;
         svg += svgFinderModule(x, y, cellSize, row, col, moduleCount, config, fill);
         continue;
       }
