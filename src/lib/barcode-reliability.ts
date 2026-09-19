@@ -68,6 +68,16 @@ export function analyzeBarcodeReliability(config: BarcodeConfig): BarcodeReliabi
     });
   }
 
+  // With a gradient the far end of the bars is color2, so it must contrast too.
+  if (config.colorMode === "gradient" && primaryContrast >= 3 && contrastRatio(config.color2, bg) < 3) {
+    score -= 20;
+    issues.push({
+      severity: "error",
+      message: "The gradient's second colour is too light against the background",
+      suggestion: "Darken the second gradient colour so every bar stays readable",
+    });
+  }
+
   if (config.colorMode === "gradient") {
     score -= 8;
     issues.push({

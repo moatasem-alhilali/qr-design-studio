@@ -15,6 +15,18 @@ interface BarcodePreviewProps {
   frame?: FrameConfig;
 }
 
+/** The same design in whole-pixel multiples, so every bar edge lands on a pixel. */
+function scaleBarcodeConfig(config: BarcodeConfig, scale: number): BarcodeConfig {
+  return {
+    ...config,
+    barWidth: config.barWidth * scale,
+    height: config.height * scale,
+    margin: config.margin * scale,
+    textMargin: config.textMargin * scale,
+    fontSize: config.fontSize * scale,
+  };
+}
+
 /** Aim every raster export at roughly this many pixels on the long edge. */
 const TARGET_EXPORT_PX = 2400;
 
@@ -34,7 +46,15 @@ export function BarcodePreview({ config, frame }: BarcodePreviewProps) {
     if (!canvasRef.current) return;
     const model = generateBarcodeModel(config);
     modelRef.current = model;
-    renderBarcodeToCanvas(canvasRef.current, model, config);
+    /*
+      Drawn at the screen's pixel density and shown at its logical size, so the
+      preview is not stretched into soft edges on high-DPI screens — people scan
+      straight off this preview.
+    */
+    const density = Math.min(4, Math.max(1, Math.ceil(window.devicePixelRatio || 1)));
+    const sharpConfig = scaleBarcodeConfig(config, density);
+    renderBarcodeToCanvas(canvasRef.current, generateBarcodeModel(sharpConfig), sharpConfig);
+    canvasRef.current.style.width = `${model.width}px`;
   }, [config]);
 
   useEffect(() => {
@@ -54,14 +74,7 @@ export function BarcodePreview({ config, frame }: BarcodePreviewProps) {
     const baseModel = generateBarcodeModel(config);
     const scale = Math.min(8, Math.max(3, Math.ceil(TARGET_EXPORT_PX / Math.max(1, baseModel.width))));
 
-    const highResConfig: BarcodeConfig = {
-      ...config,
-      barWidth: config.barWidth * scale,
-      height: config.height * scale,
-      margin: config.margin * scale,
-      textMargin: config.textMargin * scale,
-      fontSize: config.fontSize * scale,
-    };
+    const highResConfig = scaleBarcodeConfig(config, scale);
 
     const sourceCanvas = document.createElement("canvas");
     renderBarcodeToCanvas(sourceCanvas, generateBarcodeModel(highResConfig), highResConfig);

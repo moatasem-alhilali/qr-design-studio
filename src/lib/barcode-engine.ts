@@ -57,6 +57,65 @@ export interface BarcodeModel {
   barY: number;
   textY: number;
   patternWidth: number;
+  /** Blank space left and right of the bars, never below the symbology minimum. */
+  quietX: number;
+}
+
+/**
+ * Minimum horizontal quiet zone, in modules (narrow-bar widths). Scanners look
+ * for this empty run to find where the symbol starts; when it is short they
+ * keep retrying, which is what makes a barcode feel slow to read. The values
+ * follow the GS1 / ISO specs (EAN-13 and UPC-A ask for 11 on the left).
+ */
+const MIN_QUIET_MODULES: Record<BarcodeFormat, number> = {
+  CODE128: 10,
+  CODE39: 10,
+  CODE93: 10,
+  EAN13: 11,
+  EAN8: 7,
+  UPC: 11,
+  ITF14: 10,
+  ITF: 10,
+  codabar: 10,
+};
+
+/** Consecutive dark modules merged into one bar: [start module, run length]. */
+function barRuns(data: string): Array<[number, number]> {
+  const runs: Array<[number, number]> = [];
+  let start = -1;
+  for (let index = 0; index <= data.length; index++) {
+    const dark = data[index] === "1";
+    if (dark && start < 0) start = index;
+    if (!dark && start >= 0) {
+      runs.push([start, index - start]);
+      start = -1;
+    }
+  }
+  return runs;
+}
+
+/**
+ * Square bars are drawn as whole runs. Drawing each module separately left
+ * anti-aliased hairlines between neighbours once the image was scaled, and a
+ * scanner reads those as extra spaces. Rounded and pill shapes keep their
+ * per-module look, which is the point of choosing them.
+ */
+function barRects(model: BarcodeModel, config: BarcodeConfig): Array<[number, number]> {
+  const rects: Array<[number, number]> = [];
+  let x = model.quietX;
+  for (const encoding of model.encodings) {
+    if (config.barShape === "square") {
+      for (const [start, length] of barRuns(encoding.data)) {
+        rects.push([x + start * config.barWidth, length * config.barWidth]);
+      }
+    } else {
+      for (let index = 0; index < encoding.data.length; index++) {
+        if (encoding.data[index] === "1") rects.push([x + index * config.barWidth, config.barWidth]);
+      }
+    }
+    x += encoding.data.length * config.barWidth;
+  }
+  return rects;
 }
 
 export const defaultBarcodeConfig: BarcodeConfig = {
@@ -219,7 +278,8 @@ export function generateBarcodeModel(config: BarcodeConfig): BarcodeModel {
 
   const patternWidth = encodings.reduce((sum, encoding) => sum + encoding.data.length * config.barWidth, 0);
   const textHeight = measureTextHeight(config);
-  const width = patternWidth + config.margin * 2;
+  const quietX = Math.max(config.margin, MIN_QUIET_MODULES[config.format] * config.barWidth);
+  const width = patternWidth + quietX * 2;
   const height = config.height + config.margin * 2 + textHeight;
   const barY = config.margin + (config.showText && config.textPosition === "top" ? textHeight : 0);
   const textY =
@@ -239,6 +299,7 @@ export function generateBarcodeModel(config: BarcodeConfig): BarcodeModel {
     barY,
     textY,
     patternWidth,
+    quietX,
   };
 }
 
@@ -285,21 +346,14 @@ export function renderBarcodeToCanvas(canvas: HTMLCanvasElement, model: BarcodeM
 
   ctx.fillStyle = getFillStyle(ctx, model.width, model.height, config);
 
-  let x = config.margin;
-  for (const encoding of model.encodings) {
-    for (let index = 0; index < encoding.data.length; index++) {
-      if (encoding.data[index] !== "1") continue;
-      const barX = x + index * config.barWidth;
-      const radius = getRadius(config, config.barWidth);
-
-      if (radius > 0) {
-        roundRect(ctx, barX, model.barY, config.barWidth, config.height, radius);
-        ctx.fill();
-      } else {
-        ctx.fillRect(barX, model.barY, config.barWidth, config.height);
-      }
+  const radius = getRadius(config, config.barWidth);
+  for (const [barX, barWidth] of barRects(model, config)) {
+    if (radius > 0) {
+      roundRect(ctx, barX, model.barY, barWidth, config.height, radius);
+      ctx.fill();
+    } else {
+      ctx.fillRect(barX, model.barY, barWidth, config.height);
     }
-    x += encoding.data.length * config.barWidth;
   }
 
   if (config.showText) {
@@ -308,10 +362,10 @@ export function renderBarcodeToCanvas(canvas: HTMLCanvasElement, model: BarcodeM
     ctx.textBaseline = "alphabetic";
     if (config.textAlign === "left") {
       ctx.textAlign = "left";
-      ctx.fillText(model.displayText, config.margin, model.textY);
+      ctx.fillText(model.displayText, model.quietX, model.textY);
     } else if (config.textAlign === "right") {
       ctx.textAlign = "right";
-      ctx.fillText(model.displayText, model.width - config.margin, model.textY);
+      ctx.fillText(model.displayText, model.width - model.quietX, model.textY);
     } else {
       ctx.textAlign = "center";
       ctx.fillText(model.displayText, model.width / 2, model.textY);
@@ -340,19 +394,17 @@ export function exportBarcodeAsSVG(model: BarcodeModel, config: BarcodeConfig) {
   }
 
   const fill = config.colorMode === "gradient" ? "url(#barcode-gradient)" : config.color1;
-  let x = config.margin;
-  for (const encoding of model.encodings) {
-    for (let index = 0; index < encoding.data.length; index++) {
-      if (encoding.data[index] !== "1") continue;
-      const barX = x + index * config.barWidth;
-      svg += `<rect x="${barX}" y="${model.barY}" width="${config.barWidth}" height="${config.height}" rx="${radius}" fill="${fill}"/>`;
-    }
-    x += encoding.data.length * config.barWidth;
+  // crispEdges stops viewers from softening bar edges into grey when scaling.
+  const rendering = radius > 0 ? "" : ` shape-rendering="crispEdges"`;
+  svg += `<g fill="${fill}"${rendering}>`;
+  for (const [barX, barWidth] of barRects(model, config)) {
+    svg += `<rect x="${barX}" y="${model.barY}" width="${barWidth}" height="${config.height}"${radius > 0 ? ` rx="${radius}"` : ""}/>`;
   }
+  svg += `</g>`;
 
   if (config.showText) {
     const anchor = config.textAlign === "left" ? "start" : config.textAlign === "right" ? "end" : "middle";
-    const textX = config.textAlign === "left" ? config.margin : config.textAlign === "right" ? model.width - config.margin : model.width / 2;
+    const textX = config.textAlign === "left" ? model.quietX : config.textAlign === "right" ? model.width - model.quietX : model.width / 2;
     const fontWeight = config.fontWeight === "bold" ? "700" : "400";
     const fontStyle = config.fontStyle === "italic" ? "italic" : "normal";
     svg += `<text x="${textX}" y="${model.textY}" text-anchor="${anchor}" font-family="${config.fontFamily}" font-size="${config.fontSize}" font-weight="${fontWeight}" font-style="${fontStyle}" fill="${config.color1}">${escapeXml(model.displayText)}</text>`;

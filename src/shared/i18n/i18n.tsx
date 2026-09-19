@@ -255,6 +255,8 @@ const reliabilityIssueCopy: Record<Locale, Record<string, string>> = {
     "Use darker bars and a lighter background for scanner reliability": "استخدم أشرطة أغمق وخلفية أفتح لتحسين القراءة",
     "Contrast is moderate and may fail on low-end scanners": "التباين متوسط وقد يفشل مع بعض الماسحات الضعيفة",
     "Increase contrast between the bars and the background": "ارفع التباين بين الأشرطة والخلفية",
+    "The gradient's second colour is too light against the background": "اللون الثاني في التدرج فاتح جدًا مقارنة بالخلفية",
+    "Darken the second gradient colour so every bar stays readable": "اجعل اللون الثاني في التدرج أغمق لتبقى كل الأشرطة مقروءة",
     "Gradients can reduce consistency across the barcode width": "التدرجات قد تقلل ثبات قراءة الباركود",
     "Prefer a single solid color for critical packaging or retail use": "استخدم لونًا واحدًا للعبوات أو الاستخدامات المهمة",
     "Very thin bars are harder to print and scan": "الأشرطة الرفيعة جدًا أصعب في الطباعة والمسح",
